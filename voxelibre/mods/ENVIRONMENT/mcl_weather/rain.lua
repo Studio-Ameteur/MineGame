@@ -44,7 +44,7 @@ local textures = {"weather_pack_rain_raindrop_1.png", "weather_pack_rain_raindro
 
 function mcl_weather.has_rain(pos)
 	if not mcl_worlds.has_weather(pos) then return false end
-	if  mgname == "singlenode" then return true end
+	if  mgname == "singlenode" or mgname == "v6" then return true end
 	local bd = minetest.registered_biomes[minetest.get_biome_name(minetest.get_biome_data(pos).biome)]
 	if bd and bd._mcl_biome_type == "hot" then return false end
 	return true
@@ -60,15 +60,13 @@ end
 -- set skybox based on time (uses skycolor api)
 function mcl_weather.rain.set_sky_box()
 	if mcl_weather.state == "rain" then
-		if mcl_weather.skycolor.current_layer_name() ~= "weather-pack-rain-sky" then
-			mcl_weather.skycolor.add_layer(
-				"weather-pack-rain-sky",
-				{{r=0, g=0, b=0},
-				{r=85, g=86, b=98},
-				{r=135, g=135, b=151},
-				{r=85, g=86, b=98},
-				{r=0, g=0, b=0}})
-		end
+		mcl_weather.skycolor.add_layer(
+			"weather-pack-rain-sky",
+			{{r=0, g=0, b=0},
+			{r=85, g=86, b=98},
+			{r=135, g=135, b=151},
+			{r=85, g=86, b=98},
+			{r=0, g=0, b=0}})
 		mcl_weather.skycolor.active = true
 		for _, player in pairs(get_connected_players()) do
 			player:set_clouds({color="#5D5D5FE8"})
@@ -157,13 +155,15 @@ function mcl_weather.rain.clear()
 		mcl_weather.rain.remove_sound(player)
 		mcl_weather.rain.remove_player(player)
 		mcl_weather.remove_spawners_player(player)
-		player:set_clouds({color="#FFF0EF"})
 	end
 end
 
-function mcl_weather.rain.step(_)
+minetest.register_globalstep(function(dtime)
+	if mcl_weather.state ~= "rain" then
+		return false
+	end
 	mcl_weather.rain.make_weather()
-end
+end)
 
 function mcl_weather.rain.make_weather()
 	if mcl_weather.rain.init_done == false then
@@ -183,7 +183,9 @@ function mcl_weather.rain.make_weather()
 			end
 		else
 			if mcl_weather.has_snow(pos) then
-				mcl_weather.snow.make_weather_for_player(player)
+				mcl_weather.rain.remove_sound(player)
+				mcl_weather.snow.add_player(player)
+				mcl_weather.snow.set_sky_box()
 			else
 				mcl_weather.rain.add_player(player)
 				mcl_weather.rain.add_rain_particles(player)

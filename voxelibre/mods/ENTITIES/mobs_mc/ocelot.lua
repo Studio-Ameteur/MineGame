@@ -1,5 +1,7 @@
 --MCmobs v0.4
 --maikerumine
+--made for MC like Survival game
+--License for code WTFPL and otherwise stated in readmes
 
 local S = minetest.get_translator("mobs_mc")
 
@@ -30,18 +32,17 @@ local ocelot = {
 	can_despawn = true,
 	spawn_in_group = 3,
 	spawn_in_group_min = 1,
-	initial_properties = {
-		hp_min = 10,
-		hp_max = 10,
-		collisionbox = {-0.3, -0.01, -0.3, 0.3, 0.69, 0.3},
-	},
+	hp_min = 10,
+	hp_max = 10,
 	xp_min = 1,
 	xp_max = 3,
 	head_swivel = "head.control",
+	bone_eye_height = 6.2,
 	head_eye_height = 0.4,
-	head_bone_position = vector.new( 0, 6.44, -0.42 ), -- for minetest <= 5.8
+	horizontal_head_height=-0,
 	head_yaw="z",
 	curiosity = 4,
+	collisionbox = {-0.3, -0.01, -0.3, 0.3, 0.69, 0.3},
 	visual = "mesh",
 	mesh = "mobs_mc_cat.b3d",
 	textures = {"mobs_mc_cat_ocelot.png"},
@@ -172,28 +173,23 @@ local base_spawn_chance = 5000
 
 -- Spawn ocelot
 --they get the same as the llama because I'm trying to rework so much of this code right now -j4i
-mcl_mobs:spawn_setup({
-	name = "mobs_mc:ocelot",
-	dimension = "overworld",
-	type_of_spawning = "ground",
-	biomes = {
-		"Jungle",
-		"JungleEdgeM",
-		"JungleM",
-		"JungleEdge",
-		"BambooJungle",
-		"BambooJungleM",
-		"BambooJungleEdge",
-		"BambooJungleEdgeM",
-	},
-	min_light = 0,
-	max_light = minetest.LIGHT_MAX+1,
-	interval = 30,
-	chance = 300,
-	aoc = 5,
-	min_height = mobs_mc.water_level+15,
-	max_height = mcl_vars.mg_overworld_max
-})
+mcl_mobs:spawn_specific(
+"mobs_mc:ocelot",
+"overworld",
+"ground",
+{
+"Jungle",
+"JungleEdgeM",
+"JungleM",
+"JungleEdge",
+},
+0,
+minetest.LIGHT_MAX+1,
+30,
+300,
+5,
+mobs_mc.water_level+15,
+mcl_vars.mg_overworld_max)
 --[[
 mobs:spawn({
 	name = "mobs_mc:ocelot",

@@ -230,7 +230,7 @@ minetest.register_node("mcl_end:chorus_flower_dead", {
 	groups = {handy=1,axey=1, deco_block = 1, dig_by_piston = 1, destroy_by_lava_flow = 1,chorus_plant = 1, not_in_creative_inventory=1},
 	after_dig_node = mcl_end.check_detach_chorus_plant,
 	on_blast = mcl_end.check_blast_chorus_plant,
-	_mcl_blast_resistance = 0.4,
+	_mcl_blast_resistance = 2,
 	_mcl_hardness = 0.4,
 })
 
@@ -309,7 +309,7 @@ minetest.register_node("mcl_end:chorus_plant", {
 	end,
 	after_dig_node = mcl_end.check_detach_chorus_plant,
 	on_blast = mcl_end.check_blast_chorus_plant,
-	_mcl_blast_resistance = 0.4,
+	_mcl_blast_resistance = 2,
 	_mcl_hardness = 0.4,
 })
 
@@ -540,27 +540,12 @@ local eat_chorus_fruit = function(itemstack, player, pointed_thing)
 			return minetest.registered_nodes[node_under.name].on_rightclick(pointed_thing.under, node_under, player, itemstack) or itemstack
 		end
 	end
-
-	-- Wrapper for handling mcl_hunger delayed eating
-	local player_name = player:get_player_name()
-	mcl_hunger.eat_internal[player_name]._custom_itemstack = itemstack -- Used as comparison to make sure the custom wrapper executes only when the same item is eaten
-	mcl_hunger.eat_internal[player_name]._custom_var = {
-		player = player,
-	}
-	mcl_hunger.eat_internal[player_name]._custom_func = function(itemstack, player)
-		-- This function is called after the item is successfully consumed
+	local count = itemstack:get_count()
+	local new_itemstack = minetest.do_item_eat(4, nil, itemstack, player, pointed_thing)
+	local new_count = new_itemstack:get_count()
+	if count ~= new_count or new_itemstack:get_name() ~= "mcl_end:chorus_fruit" or (minetest.is_creative_enabled(player:get_player_name()) == true) then
 		random_teleport(player)
 	end
-	mcl_hunger.eat_internal[player_name]._custom_wrapper = function(player_name)
-		mcl_hunger.eat_internal[player_name]._custom_func(
-			mcl_hunger.eat_internal[player_name]._custom_itemstack,
-			mcl_hunger.eat_internal[player_name]._custom_var.player
-		)
-	end
-
-	-- Call do_item_eat with the mcl_hunger system
-	local new_itemstack = minetest.do_item_eat(4, nil, itemstack, player, pointed_thing)
-
 	return new_itemstack
 end
 

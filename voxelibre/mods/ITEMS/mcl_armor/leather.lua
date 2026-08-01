@@ -1,4 +1,3 @@
-local S = minetest.get_translator(minetest.get_current_modname())
 local C = minetest.colorize
 
 local colors = {
@@ -97,11 +96,11 @@ end
 
 mcl_armor.register_set({
 	name = "leather",
+	description = "Leather",
 	descriptions = {
-		head = S("Leather Cap"),
-		torso = S("Leather Tunic"),
-		legs = S("Leather Pants"),
-		feet = S("Leather Boots"),
+		head = "Cap",
+		torso = "Tunic",
+		legs = "Pants",
 	},
 	durability = 80,
 	enchantability = 15,
@@ -117,7 +116,7 @@ mcl_armor.register_set({
 		legs = get_texture_function("mcl_armor_leggings_leather.png"),
 		feet = get_texture_function("mcl_armor_boots_leather.png"),
 	},
-	craft_material = "mcl_mobitems:leather_piece",
+	craft_material = "mcl_mobitems:leather",
 })
 
 tt.register_priority_snippet(function(_, _, itemstack)

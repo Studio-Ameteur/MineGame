@@ -1,51 +1,36 @@
 local S = minetest.get_translator(minetest.get_current_modname())
 local explosions_griefing = minetest.settings:get_bool("mcl_explosions_griefing", true)
 
-local gamerule_tntExplodes = true
-vl_tuning.setting("gamerule:tntExplodes", "bool", {
-	set = function(value) gamerule_tntExplodes = value end,
-	get = function() return gamerule_tntExplodes end,
-	default = true,
-	description = S("Whether TNT explodes after activation."),
-})
-
 tnt = {}
 
 tnt.BOOMTIMER = 4
 tnt.BLINKTIMER = 0.25
 
----@param pos vector.Vector
+---@param pos Vector
 ---@param entname string
----@param owner string
----@return core.ObjectRef?
-local function spawn_tnt(pos, entname, owner)
+---@return ObjectRef?
+local function spawn_tnt(pos, entname)
 	minetest.sound_play("tnt_ignite", { pos = pos, gain = 1.0, max_hear_distance = 15 }, true)
 	local ent = minetest.add_entity(pos, entname)
 	if ent then
 		ent:set_armor_groups({ immortal = 1 })
-		local le = ent:get_luaentity()
-		if le then
-			le._owner = owner
-		end
 	end
 	return ent
 end
 
----@param pos vector.Vector
----@return core.ObjectRef?
----@param owner string
+---@param pos Vector
 ---@return ObjectRef?
-function tnt.ignite(pos, owner)
+function tnt.ignite(pos)
 	minetest.remove_node(pos)
-	local e = spawn_tnt(pos, "mcl_tnt:tnt", owner)
-	core.check_for_falling(pos)
+	local e = spawn_tnt(pos, "mcl_tnt:tnt")
+	minetest.check_for_falling(pos)
 	return e
 end
 
 ---Add smoke particle of entity at pos.
 ---
 ---Intended to be called every step.
----@param pos vector.Vector
+---@param pos Vector
 function tnt.smoke_step(pos)
 	minetest.add_particle({
 		pos                = vector.offset(pos, 0, 0.5, 0),
@@ -111,7 +96,7 @@ minetest.register_node("mcl_tnt:tnt", {
 		end
 	end,
 	_on_ignite = function(player, pointed_thing)
-		tnt.ignite(pointed_thing.under, player:get_player_name())
+		tnt.ignite(pointed_thing.under)
 		return true
 	end,
 	_on_burn = function(pos)
@@ -125,21 +110,12 @@ minetest.register_node("mcl_tnt:tnt", {
 			tnt.ignite(droppos)
 		end
 	end,
-	_vl_projectile = {
-		on_collide = function(projectile, pos, node, node_def)
-			if mcl_burning.is_burning(projectile.object) then
-				tnt.ignite(pos, projectile._owner)
-			end
-		end
-	},
 	sounds = sounds,
 })
 
 local TNT = {
 	-- Static definition
-	description = S("TNT"),
 	physical = true, -- Collides with things
-	collide_with_objects = false,
 	--weight = -100,
 	collisionbox = { -0.5, -0.5, -0.5, 0.5, 0.5, 0.5 },
 	visual = "cube",
@@ -159,10 +135,6 @@ local TNT = {
 }
 
 function TNT:on_activate(_, _)
-	if self._removed then
-		self.object:remove()
-		return
-	end
 	local phi = math.random(0, 65535) / 65535 * 2 * math.pi
 	local hdir_x = math.cos(phi) * 0.02
 	local hdir_z = math.sin(phi) * 0.02
@@ -221,8 +193,6 @@ end
 end]]
 
 function TNT:on_step(dtime, _)
-	if self._removed then return end
-
 	local pos = self.object:get_pos()
 	tnt.smoke_step(pos)
 	self.timer = self.timer + dtime
@@ -237,11 +207,8 @@ function TNT:on_step(dtime, _)
 		self.blinkstatus = not self.blinkstatus
 	end
 	if self.timer > tnt.BOOMTIMER then
-		if gamerule_tntExplodes then
-			--local source = (self._owner and core.get_player_by_name(self._owner)) or self.object
-			mcl_explosions.explode(self.object:get_pos(), 4, {}, source, self.object)
-		end
-		mcl_util.remove_entity(self)
+		mcl_explosions.explode(self.object:get_pos(), 4, {}, self.object)
+		self.object:remove()
 	end
 end
 

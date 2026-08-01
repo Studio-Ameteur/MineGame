@@ -58,7 +58,7 @@ function mcl_item_entity.register_pickup_achievement(itemname, award)
 end
 
 mcl_item_entity.register_pickup_achievement("tree", "mcl:mineWood")
-mcl_item_entity.register_pickup_achievement("mcl_mobitems:flaming_rod", "mcl:flaming_rod")
+mcl_item_entity.register_pickup_achievement("mcl_mobitems:blaze_rod", "mcl:blazeRod")
 mcl_item_entity.register_pickup_achievement("mcl_mobitems:leather", "mcl:killCow")
 mcl_item_entity.register_pickup_achievement("mcl_core:diamond", "mcl:diamonds")
 mcl_item_entity.register_pickup_achievement("mcl_core:crying_obsidian", "mcl:whosCuttingOnions")
@@ -107,10 +107,6 @@ local function disable_physics(object, luaentity, ignore_check, reset_movement)
 			object:set_velocity(vector.zero())
 			object:set_acceleration(vector.zero())
 		end
-		-- Reset smooth drop sliding state
-		luaentity._slide_timer = 0
-		luaentity._slide_vx = 0
-		luaentity._slide_vz = 0
 	end
 end
 
@@ -140,7 +136,6 @@ local function try_object_pickup(player, inv, object, checkpos)
 		-- Destroy entity
 		-- This just prevents this section to be run again because object:remove() doesn't remove the item immediately.
 		le.target = checkpos
-		le.itemstring = ""
 		le._removed = true
 
 		-- Stop the object
@@ -164,12 +159,6 @@ local function try_object_pickup(player, inv, object, checkpos)
 		le.itemstring = leftovers:to_string()
 	end
 end
-
----@class core.LuaEntity
----@field _magnet_distance number
----@field collector string
----@field collected boolean
----@field age number
 
 minetest.register_globalstep(function(_)
 	tick = not tick
@@ -201,20 +190,15 @@ minetest.register_globalstep(function(_)
 
 			--magnet and collection
 			for _, object in pairs(minetest.get_objects_inside_radius(checkpos, item_drop_settings.xp_radius_magnet)) do
-				local distance = vector.distance(checkpos, object:get_pos())
-				if not object:is_player() and distance < item_drop_settings.radius_magnet and
+				if not object:is_player() and vector.distance(checkpos, object:get_pos()) < item_drop_settings.radius_magnet and
 					object:get_luaentity() and object:get_luaentity().name == "__builtin:item" and object:get_luaentity()._magnet_timer
 					and (object:get_luaentity()._insta_collect or (object:get_luaentity().age > item_drop_settings.age)) then
 
 					try_object_pickup( player, inv, object, checkpos )
 				elseif not object:is_player() and object:get_luaentity() and object:get_luaentity().name == "mcl_experience:orb" then
 					local entity = object:get_luaentity()
-					local magnet_distance = entity._magnet_distance
-					if not magnet_distance or distance < magnet_distance then
-						entity.collector = player:get_player_name()
-						entity.collected = true
-						entity._magnet_distance = distance
-					end
+					entity.collector = player:get_player_name()
+					entity.collected = true
 				end
 			end
 
@@ -222,95 +206,12 @@ minetest.register_globalstep(function(_)
 	end
 end)
 
--- BEGIN Copied from luanti/builtin/game/item.lua, then patched
-local function has_all_groups(tbl, required_groups)
-	if type(required_groups) == "string" then
-		return (tbl[required_groups] or 0) ~= 0
-	end
-	for _, group in ipairs(required_groups) do
-		if (tbl[group] or 0) == 0 then
-			return false
-		end
-	end
-	return true
-end
-function get_node_drops(drop, param2, ptype, toolname)
-	local palette_index = core.strip_param2_color(param2, ptype)
+-- Stupid workaround to get drops from a drop table:
+-- Create a temporary table in minetest.registered_nodes that contains the proper drops,
+-- because unfortunately minetest.get_node_drops needs the drop table to be inside a registered node definition
+-- (very ugly)
 
-	if drop == nil then
-		return {}
-	elseif type(drop) == "string" then
-		-- itemstring drop
-		return drop ~= "" and {drop} or {}
-	elseif drop.items == nil then
-		-- drop = {} to disable default drop
-		return {}
-	end
-
-	-- Extended drop table
-	local got_items = {}
-	local got_count = 0
-	for _, item in ipairs(drop.items) do
-		local good_rarity = true
-		local good_tool = true
-		if item.rarity ~= nil then
-			good_rarity = item.rarity < 1 or math.random(item.rarity) == 1
-		end
-		if item.tools ~= nil or item.tool_groups ~= nil then
-			good_tool = false
-		end
-		if item.tools ~= nil and toolname then
-			for _, tool in ipairs(item.tools) do
-				if tool:sub(1, 1) == '~' then
-					good_tool = toolname:find(tool:sub(2)) ~= nil
-				else
-					good_tool = toolname == tool
-				end
-				if good_tool then
-					break
-				end
-			end
-		end
-		if item.tool_groups ~= nil and toolname then
-			local tooldef = core.registered_items[toolname]
-			if tooldef ~= nil and type(tooldef.groups) == "table" then
-				if type(item.tool_groups) == "string" then
-					-- tool_groups can be a string which specifies the required group
-					good_tool = core.get_item_group(toolname, item.tool_groups) ~= 0
-				else
-					-- tool_groups can be a list of sufficient requirements.
-					-- i.e. if any item in the list can be satisfied then the tool is good
-					assert(type(item.tool_groups) == "table")
-					for _, required_groups in ipairs(item.tool_groups) do
-						-- required_groups can be either a string (a single group),
-						-- or an array of strings where all must be in tooldef.groups
-						good_tool = has_all_groups(tooldef.groups, required_groups)
-						if good_tool then
-							break
-						end
-					end
-				end
-			end
-		end
-		if good_rarity and good_tool then
-			got_count = got_count + 1
-			for _, add_item in ipairs(item.items) do
-				-- add color, if necessary
-				if item.inherit_color and palette_index then
-					local stack = ItemStack(add_item)
-					stack:get_meta():set_int("palette_index", palette_index)
-					add_item = stack:to_string()
-				end
-				got_items[#got_items+1] = add_item
-			end
-			if drop.max_items ~= nil and got_count == drop.max_items then
-				break
-			end
-		end
-	end
-	return got_items
-end
--- END Copied from luanti/builtin/game/item.lua, then patched
+local tmp_id = 0
 
 ---@param drop string|drop_definition
 ---@param toolname string
@@ -318,7 +219,16 @@ end
 ---@param paramtype2 paramtype2
 ---@return string[]
 local function get_drops(drop, toolname, param2, paramtype2)
-	return get_node_drops(drop, param2, paramtype2, toolname)
+	tmp_id = tmp_id + 1
+	local tmp_node_name = "mcl_item_entity:" .. tmp_id
+	minetest.registered_nodes[tmp_node_name] = {
+		name = tmp_node_name,
+		drop = drop,
+		paramtype2 = paramtype2
+	}
+	local drops = minetest.get_node_drops({ name = tmp_node_name, param2 = param2 }, toolname)
+	minetest.registered_nodes[tmp_node_name] = nil
+	return drops
 end
 
 local function discrete_uniform_distribution(drops, min_count, max_count, cap)
@@ -407,15 +317,9 @@ function minetest.handle_node_drops(pos, drops, digger)
 		end
 	end
 
-	-- Special node drops (crushing) when digging with a hammer
-	local hammer = tooldef and tooldef.groups.hammer
-	if hammer and hammer > 0 and nodedef._vl_crushing_drop then
-		drops = nodedef._vl_crushing_drop
-	-- Fortune drops
-	elseif tool and nodedef._mcl_fortune_drop and enchantments.fortune then
+	if tool and nodedef._mcl_fortune_drop and enchantments.fortune then
 		local fortune_level = enchantments.fortune
 		local fortune_drop = nodedef._mcl_fortune_drop
-		local simple_drop = nodedef._mcl_fortune_drop.drop_without_fortune
 		if fortune_drop.discrete_uniform_distribution then
 			local min_count = fortune_drop.min_count
 			local max_count = fortune_drop.max_count + fortune_level * (fortune_drop.factor or 1)
@@ -430,12 +334,6 @@ function minetest.handle_node_drops(pos, drops, digger)
 			-- Fixed Behavior
 			local drop = get_fortune_drops(fortune_drop, fortune_level)
 			drops = get_drops(drop, tool:get_name(), dug_node.param2, nodedef.paramtype2)
-		end
-
-		if simple_drop then
-			for _, item in pairs(simple_drop) do
-				table.insert(drops, item)
-			end
 		end
 	end
 
@@ -478,7 +376,7 @@ function minetest.handle_node_drops(pos, drops, digger)
 	end
 end
 
--- the following code is pulled from Luanti builtin without changes except for the call order being changed,
+-- the following code is pulled from Minetest builtin without changes except for the call order being changed,
 -- until a comment saying explicitly it's the end of such code
 -- TODO if this gets a fix in the engine, remove the block of code
 local function user_name(user)
@@ -533,7 +431,7 @@ function minetest.node_dig(pos, node, digger)
 	-- Handle drops
 	minetest.handle_node_drops(pos, drops, digger)
 
-	if wielded and not node._vl_indirectly_mined then
+	if wielded then
 		local wdef = wielded:get_definition()
 		local tp = wielded:get_tool_capabilities()
 		local dp = minetest.get_dig_params(def and def.groups, tp, wielded:get_wear())
@@ -592,7 +490,7 @@ function minetest.node_dig(pos, node, digger)
 
 	return true
 end
--- end of code pulled from Luanti
+-- end of code pulled from Minetest
 
 -- Drop single items by default
 function minetest.item_drop(itemstack, dropper, pos)
@@ -934,7 +832,6 @@ minetest.register_entity(":__builtin:item", {
 			_insta_collect = self._insta_collect,
 			_flowing = self._flowing,
 			_removed = self._removed,
-			_immortal = self._immortal,
 		})
 		-- sfan5 guessed that the biggest serializable item
 		-- entity would have a size of 65530 bytes. This has
@@ -987,16 +884,10 @@ minetest.register_entity(":__builtin:item", {
 				self._insta_collect = data._insta_collect
 				self._flowing = data._flowing
 				self._removed = data._removed
-				self._immortal = data._immortal
 			end
 		else
 			self.itemstring = staticdata
 		end
-
-		local itemstack = ItemStack(self.itemstring)
-		vl_legacy.convert_itemstack(itemstack)
-		self.itemstring = itemstack:to_string()
-
 		if self._removed then
 			self._removed = true
 			self.object:remove()
@@ -1017,10 +908,6 @@ minetest.register_entity(":__builtin:item", {
 		self._force = nil
 		self._forcestart = nil
 		self._forcetimer = 0
-		-- Smooth drop sliding state
-		self._slide_vx = 0
-		self._slide_vz = 0
-		self._slide_timer = 0
 
 		self.object:set_armor_groups({ immortal = 1 })
 		-- self.object:set_velocity(vector.new(0, 2, 0))
@@ -1070,7 +957,6 @@ minetest.register_entity(":__builtin:item", {
 		self.random_velocity = 0
 		self:set_item(own_stack:to_string())
 
-		entity.itemstring = ""
 		entity._removed = true
 		object:remove()
 		return true
@@ -1086,30 +972,11 @@ minetest.register_entity(":__builtin:item", {
 			return
 		end
 
-		-- Smooth drop: slide with friction after landing
-		if self._slide_timer and self._slide_timer > 0 then
-			self._slide_timer = self._slide_timer - dtime
-			-- Frame-rate independent friction (1 - k*dtime), no math.pow needed
-			local friction = math.max(0, 1 - 4 * dtime)
-			self._slide_vx = self._slide_vx * friction
-			self._slide_vz = self._slide_vz * friction
-			-- Stop sliding when velocity is negligible
-			if math.abs(self._slide_vx) < 0.01 and math.abs(self._slide_vz) < 0.01 then
-				self._slide_timer = 0
-				self._slide_vx = 0
-				self._slide_vz = 0
-				self.object:set_velocity(vector.zero())
-			else
-				self.object:set_velocity(vector.new(self._slide_vx, 0, self._slide_vz))
-			end
-			return
-		end
-
 		self.age = self.age + dtime
 		if self._collector_timer then
 			self._collector_timer = self._collector_timer + dtime
 		end
-		if time_to_live > 0 and ( self.age > time_to_live and not self._immortal ) then
+		if time_to_live > 0 and self.age > time_to_live then
 			self._removed = true
 			self.object:remove()
 			return
@@ -1197,19 +1064,8 @@ minetest.register_entity(":__builtin:item", {
 						return
 					end
 				end
-			end
-			-- don't disable if underwater
-			if not is_in_water then
-				-- Smooth drop: if item has horizontal velocity, start sliding instead of snapping
-				if is_on_floor and (v.x*v.x + v.z*v.z) > 0.0225 then -- 0.15 squared
-					self._slide_vx = v.x
-					self._slide_vz = v.z
-					self._slide_timer = 0.6
-					self.object:set_velocity(vector.new(v.x, 0, v.z))
-					self.object:set_acceleration(vector.zero())
-					self.object:set_properties({ physical = false })
-					self.physical_state = false
-				else
+				-- don't disable if underwater
+				if not is_in_water then
 					disable_physics(self.object, self)
 				end
 			end

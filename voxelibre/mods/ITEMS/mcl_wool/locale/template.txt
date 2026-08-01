@@ -1,4 +1,6 @@
 # textdomain: mcl_wool
+Wool=
+Carpet=
 White Wool=
 White Carpet=
 Grey Wool=
@@ -33,5 +35,3 @@ Light Blue Wool=
 Light Blue Carpet=
 Wool is a decorative block which comes in many different colors.=
 Carpets are thin floor covers which come in many different colors.=
-Wool=
-Carpet=

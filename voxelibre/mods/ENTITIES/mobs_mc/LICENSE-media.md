@@ -75,7 +75,7 @@ Origin of those models:
         * `mobs_mc_mushroom_brown.png` (CC0)
 
 * “Spawn egg” textures (`mobs_mc_spawn_icon_*`) by 22i
-* Llama decor (carpet) textures (`mobs_mc_llama_decor_*`) by erle and rudzik8
+* Llama decor (carpet) textures (`mobs_mc_llama_decor_*`) by erlehmann and rudzik8
 * Any other texture not mentioned here are licensed under the MIT License
 
 ## Sounds
@@ -148,8 +148,8 @@ Origin of those models:
 * Blender Foundation (CC BY 3.0)
     * `mobs_sheep.ogg`,
 * daufinsyd (MIT License)
-    * `vl_elemental_fire_breath.ogg`
-    * `vl_elemental_fire_died.ogg`
+    * `mobs_mc_blaze_breath.ogg`
+    * `mobs_mc_blaze_died.ogg`
 * [qubodup](https://opengameart.org/content/slime-monster)
     * `mobs_mc_squid_hurt.*.ogg` (CC BY 3.0)
     * `mobs_mc_squid_death.*.ogg` (CC BY 3.0)
@@ -161,7 +161,7 @@ Origin of those models:
     * `mobs_mc_snowman_hurt.1.ogg` (CC0)
         * Source: <https://freesound.org/people/kyles/sounds/450848/>
 * [thefilmbakery](https://freesound.org/people/thefilmbakery/) (CC0)
-    * `vl_elemental_fire_hurt.ogg`
+    * `mobs_mc_blaze_hurt.ogg`
 	* Source: <https://freesound.org/people/thefilmbakery/sounds/137836/>
 * TenPlus1, from `mobs_monster` or `mobs_animal` mod (MIT License)
     * `mobs_fireball.ogg`
@@ -243,7 +243,7 @@ Origin of those models:
 * [ebcrosby](https://freesound.org/people/ebcrosby/)
     * `mobs_mc_ocelot_hurt.ogg` (CC BY 3.0)
         * Source: <https://freesound.org/people/ebcrosby/sounds/332979/>
-* Hybrid Dog (forum.luanti.org)
+* Hybrid Dog (forum.minetest.net)
     * `mobs_mc_wolf_hurt.*.ogg` (CC0)
     * `mobs_mc_wolf_bark.*.ogg` (CC0)
     * `mobs_mc_wolf_death.*.ogg` (CC0)
@@ -253,11 +253,11 @@ Origin of those models:
 * [cliftoncarlson](https://freesound.org/people/cliftonmcarlson/)
     * `mobs_mc_wolf_take_bone.ogg` (CC0)
         * Source: <https://freesound.org/people/cliftonmcarlson/sounds/392883/>
-* [Inocodum](https://forum.luanti.org/memberlist.php?mode=viewprofile&u=3115)
+* [Inocodum](https://forum.minetest.net/memberlist.php?mode=viewprofile&u=3115)
     * `mobs_mc_silverfish_hurt.ogg` (CC BY-SA 4.0)
     * `mobs_mc_silverfish_death.ogg` (CC BY-SA 4.0)
     * `mobs_mc_silverfish_idle.ogg` (CC BY-SA 4.0)
-        * Source: <https://forum.luanti.org/viewtopic.php?f=17&t=10013>
+        * Source: <https://forum.minetest.net/viewtopic.php?f=17&t=10013>
 * [LukeIRL](https://freesound.org/people/LukeIRL/)
     * `mobs_mc_magma_cube_small.ogg` (CC BY 4.0)
         * Derived from: <https://freesound.org/people/LukeIRL/sounds/176123/>

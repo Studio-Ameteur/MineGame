@@ -1,6 +1,8 @@
 --MCmobs v0.4
 --maikerumine
 --updated by Herowl
+--made for MC like Survival game
+--License for code WTFPL and otherwise stated in readmes
 
 local S = minetest.get_translator("mobs_mc")
 local mobs_griefing = minetest.settings:get_bool("mobs_griefing", true)
@@ -26,7 +28,7 @@ end
 local function wither_unstuck(self)
 	local pos = self.object:get_pos()
 	if mobs_griefing then -- destroy blocks very nearby (basically, colliding with)
-		local col = self.initial_properties.collisionbox
+		local col = self.collisionbox
 		local pos1 = vector.offset(pos, col[1], col[2], col[3])
 		local pos2 = vector.offset(pos, col[4], col[5], col[6])
 		for z = pos1.z, pos2.z do for y = pos1.y, pos2.y do for x = pos1.x, pos2.x do
@@ -48,7 +50,7 @@ local function wither_unstuck(self)
 			end
 		end end end
 	end
-	mcl_mobs.mob_class.boom(self, pos, 2, { griefing = false }, true)
+	mcl_mobs.mob_class.safe_boom(self, pos, 2)
 end
 
 local function get_dim_relative_y(pos)
@@ -69,16 +71,13 @@ mcl_mobs.register_mob("mobs_mc:wither", {
 	description = S("Wither"),
 	type = "monster",
 	spawn_class = "hostile",
-	initial_properties = {
-		hp_max = 300,
-		hp_min = 300,
-		collisionbox = {-0.9, 0.4, -0.9, 0.9, 2.45, 0.9},
-	},
+	hp_max = 300,
+	hp_min = 300,
 	xp_min = 50,
 	xp_max = 50,
-	head_eye_height = 2.2,
 	armor = {undead = 80, fleshy = 100},
 	-- This deviates from MC Wiki's size, which makes no sense
+	collisionbox = {-0.9, 0.4, -0.9, 0.9, 2.45, 0.9},
 	visual = "mesh",
 	mesh = "mobs_mc_wither.b3d",
 	textures = {
@@ -161,7 +160,11 @@ mcl_mobs.register_mob("mobs_mc:wither", {
 
 			-- when fully spawned, explode
 			if self._spawning <= 0 then
-				mcl_mobs.mob_class.boom(self, pos, WITHER_INIT_BOOM, {}, true)
+				if mobs_griefing and not minetest.is_protected(pos, "") then
+					mcl_explosions.explode(pos, WITHER_INIT_BOOM, { drop_chance = 1.0 }, self.object)
+				else
+					mcl_mobs.mob_class.safe_boom(self, pos, WITHER_INIT_BOOM)
+				end
 				self.object:set_texture_mod("")
 				self._spawning = nil
 				self._spw_max = nil
@@ -173,7 +176,7 @@ mcl_mobs.register_mob("mobs_mc:wither", {
 		-- passive regeneration
 		self._custom_timer = self._custom_timer + dtime
 		if self._custom_timer > 1 then
-			self.health = math.min(self.health + 1, self.initial_properties.hp_max)
+			self.health = math.min(self.health + 1, self.hp_max)
 			self._custom_timer = self._custom_timer - 1
 		end
 
@@ -198,7 +201,7 @@ mcl_mobs.register_mob("mobs_mc:wither", {
 					self._death_timer = self._death_timer + self.health - self._health_old
 					if self.health == self._health_old then self._death_timer = self._death_timer + dtime end
 					if self._death_timer > 100 then
-						mcl_util.remove_entity(self)
+						self.object:remove()
 						return false
 					end
 					self._health_old = self.health
@@ -213,7 +216,7 @@ mcl_mobs.register_mob("mobs_mc:wither", {
 
 		-- update things dependent on HP
 		local rand_factor
-		if self.health < (self.initial_properties.hp_max / 2) then
+		if self.health < (self.hp_max / 2) then
 			self.base_texture = "mobs_mc_wither_half_health.png"
 			self.fly = false
 			self._arrow_resistant = true
@@ -316,10 +319,9 @@ mcl_mobs.register_mob("mobs_mc:wither", {
 		local sr = self.object:get_pos() + side_cor -- position of side right head
 		local sl = self.object:get_pos() - side_cor -- position of side left head
 		-- height corrections
-		local cb = self.initial_properties.collisionbox
-		m.y = m.y + cb[5]
-		sr.y = sr.y + cb[5] - 0.3
-		sl.y = sl.y + cb[5] - 0.3
+		m.y = m.y + self.collisionbox[5]
+		sr.y = sr.y + self.collisionbox[5] - 0.3
+		sl.y = sl.y + self.collisionbox[5] - 0.3
 		local rand_pos = math.random(1,3)
 		if rand_pos == 1 then m = sr
 		elseif rand_pos == 2 then m = sl end
@@ -428,7 +430,7 @@ mcl_mobs.register_mob("mobs_mc:wither", {
 		minetest.sound_play("mobs_mc_wither_spawn", {object=self.object, gain=1.0, max_hear_distance=64})
 		self._custom_timer = 0.0
 		self._death_timer = 0.0
-		self._health_old = self.initial_properties.hp_max
+		self._health_old = self.hp_max
 		self._spawning = 10
 		return true
 	end,
@@ -454,26 +456,24 @@ mcl_mobs.register_arrow("mobs_mc:wither_skull", {
 	textures = {
 		"mobs_mc_wither_projectile.png^[verticalframe:6:0", -- top
 		"mobs_mc_wither_projectile.png^[verticalframe:6:1", -- bottom
+		"mobs_mc_wither_projectile.png^[verticalframe:6:2", -- left
+		"mobs_mc_wither_projectile.png^[verticalframe:6:3", -- right
 		"mobs_mc_wither_projectile.png^[verticalframe:6:4", -- back
 		"mobs_mc_wither_projectile.png^[verticalframe:6:5", -- front
-		"mobs_mc_wither_projectile.png^[verticalframe:6:3", -- right
-		"mobs_mc_wither_projectile.png^[verticalframe:6:2", -- left
 	},
 	velocity = 7,
+	rotate = 90,
 	_lifetime = 15,
-	_vl_projectile = {
-		damage_groups = {fleshy = 8},
-	},
 	on_punch = function(self) end,
-	allow_punching = function(self, _, _, object)
-		local le = object and object:get_luaentity()
-		return not le or le.name ~= "mobs_mc:wither"
-	end,
 
 	-- direct hit
 	hit_player = function(self, player)
 		local pos = vector.new(self.object:get_pos())
 		mcl_potions.give_effect("withering", player, 2, 10)
+		player:punch(self.object, 1.0, {
+			full_punch_interval = 0.5,
+			damage_groups = {fleshy = 8},
+		}, nil)
 		mcl_mobs.mob_class.boom(self, pos, 1)
 		if player:get_hp() <= 0 then
 			local shooter = self._shooter:get_luaentity()
@@ -485,6 +485,10 @@ mcl_mobs.register_arrow("mobs_mc:wither_skull", {
 	hit_mob = function(self, mob)
 		local pos = vector.new(self.object:get_pos())
 		mcl_potions.give_effect("withering", mob, 2, 10)
+		mob:punch(self.object, 1.0, {
+			full_punch_interval = 0.5,
+			damage_groups = {fleshy = 8},
+		}, nil)
 		mcl_mobs.mob_class.boom(self, pos, 1)
 		local l = mob:get_luaentity()
 		if l and l.health - 8 <= 0 then
@@ -496,7 +500,7 @@ mcl_mobs.register_arrow("mobs_mc:wither_skull", {
 
 	-- node hit, explode
 	hit_node = function(self, pos, node)
-		mcl_mobs.mob_class.boom(self, pos, 1)
+		mcl_mobs.mob_class.boom(self,pos, 1)
 	end
 })
 mcl_mobs.register_arrow("mobs_mc:wither_skull_strong", {
@@ -505,18 +509,15 @@ mcl_mobs.register_arrow("mobs_mc:wither_skull_strong", {
 	textures = {
 		"mobs_mc_wither_projectile_strong.png^[verticalframe:6:0", -- top
 		"mobs_mc_wither_projectile_strong.png^[verticalframe:6:1", -- bottom
+		"mobs_mc_wither_projectile_strong.png^[verticalframe:6:2", -- left
+		"mobs_mc_wither_projectile_strong.png^[verticalframe:6:3", -- right
 		"mobs_mc_wither_projectile_strong.png^[verticalframe:6:4", -- back
 		"mobs_mc_wither_projectile_strong.png^[verticalframe:6:5", -- front
-		"mobs_mc_wither_projectile_strong.png^[verticalframe:6:3", -- right
-		"mobs_mc_wither_projectile_strong.png^[verticalframe:6:2", -- left
 	},
 	velocity = 4,
+	rotate = 90,
 	_lifetime = 25,
 	on_punch = function(self) end,
-	allow_punching = function(self, _, _, object)
-		local le = object and object:get_luaentity()
-		return not le or le.name ~= "mobs_mc:wither"
-	end,
 
 	-- direct hit
 	hit_player = function(self, player)
@@ -526,8 +527,11 @@ mcl_mobs.register_arrow("mobs_mc:wither_skull_strong", {
 			full_punch_interval = 0.5,
 			damage_groups = {fleshy = 12},
 		}, nil)
-		mcl_mobs.mob_class.boom(self, pos, 1, { max_blast_resistance = 0 })
-
+		if mobs_griefing and not minetest.is_protected(pos, "") then
+			mcl_explosions.explode(pos, 1, { drop_chance = 1.0, max_blast_resistance = 0, }, self.object)
+		else
+			mcl_mobs.mob_class.safe_boom(self, pos, 1) --need to call it this way bc self is the "arrow" object here
+		end
 		if player:get_hp() <= 0 then
 			local shooter = self._shooter:get_luaentity()
 			if shooter then shooter.health = shooter.health + 5 end
@@ -542,9 +546,11 @@ mcl_mobs.register_arrow("mobs_mc:wither_skull_strong", {
 			full_punch_interval = 0.5,
 			damage_groups = {fleshy = 12},
 		}, nil)
-		
-		mcl_mobs.mob_class.boom(self, pos, 1, { max_blast_resistance = 0 })
-
+		if mobs_griefing and not minetest.is_protected(pos, "") then
+			mcl_explosions.explode(pos, 1, { drop_chance = 1.0, max_blast_resistance = 0, }, self.object)
+		else
+			mcl_mobs.mob_class.safe_boom(self, pos, 1) --need to call it this way bc self is the "arrow" object here
+		end
 		local l = mob:get_luaentity()
 		if l and l.health - 8 <= 0 then
 			local shooter = self._shooter:get_luaentity()
@@ -555,7 +561,11 @@ mcl_mobs.register_arrow("mobs_mc:wither_skull_strong", {
 
 	-- node hit, explode
 	hit_node = function(self, pos, node)
-		mcl_mobs.mob_class.boom(self, pos, 1, { max_blast_resistance = 0 })
+		if mobs_griefing and not minetest.is_protected(pos, "") then
+			mcl_explosions.explode(pos, 1, { drop_chance = 1.0, max_blast_resistance = 0, }, self.object)
+		else
+			mcl_mobs.mob_class.safe_boom(self, pos, 1) --need to call it this way bc self is the "arrow" object here
+		end
 	end
 })
 
@@ -564,3 +574,4 @@ mcl_mobs.register_egg("mobs_mc:wither", S("Wither"), "#4f4f4f", "#4f4f4f", 0, tr
 
 mcl_wip.register_wip_item("mobs_mc:wither")
 mcl_mobs:non_spawn_specific("mobs_mc:wither","overworld",0,minetest.LIGHT_MAX+1)
+

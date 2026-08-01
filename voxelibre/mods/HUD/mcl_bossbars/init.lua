@@ -1,5 +1,3 @@
-local hud_type_field = mcl_vars.hud_type_field
-
 mcl_bossbars = {
 	bars = {},
 	huds = {},
@@ -88,7 +86,7 @@ function mcl_bossbars.update_boss(object, name, color)
 	local bardef = {
 		color = color,
 		text = props.nametag,
-		percentage = math.floor(props.health / props.initial_properties.hp_max * 100),
+		percentage = math.floor(props.health / props.hp_max * 100),
 	}
 
 	if not bardef.text or bardef.text == "" then
@@ -151,7 +149,7 @@ minetest.register_globalstep(function(dtime)
 						image = bar.image,
 						text = bar.text,
 						text_id = player:hud_add({
-							[hud_type_field] = "text",
+							hud_elem_type = "text",
 							text = bar.text,
 							number = bar.color,
 							position = {x = 0.5, y = 0},
@@ -159,7 +157,7 @@ minetest.register_globalstep(function(dtime)
 							offset = {x = 0, y = i * 40},
 						}),
 						image_id = player:hud_add({
-							[hud_type_field] = "image",
+							hud_elem_type = "image",
 							text = bar.image,
 							position = {x = 0.5, y = 0},
 							alignment = {x = 0, y = 1},

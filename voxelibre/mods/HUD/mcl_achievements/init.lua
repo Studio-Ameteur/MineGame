@@ -57,7 +57,7 @@ awards.register_achievement("mcl:buildHoe", {
 })
 awards.register_achievement("mcl:makeBread", {
 	title = S("Bake Bread"),
-	description = S("Use wheat to craft bread."),
+	description = S("Use wheat to craft a bread."),
 	icon = "farming_bread.png",
 	trigger = {
 		type = "craft",
@@ -121,7 +121,7 @@ awards.register_achievement("mcl:bookcase", {
 
 awards.register_achievement("mcl:buildIronPickaxe", {
 	title = S("Isn't It Iron Pick"),
-	description = S("Craft an iron pickaxe using sticks and iron."),
+	description = S("Craft a iron pickaxe using sticks and iron."),
 	icon = "default_tool_steelpick.png",
 	trigger = {
 		type = "craft",
@@ -140,10 +140,10 @@ awards.register_achievement("mcl:diamonds", {
 	icon = "mcl_core_diamond_ore.png",
 	type = "Advancement",
 })
-awards.register_achievement("mcl:flaming_rod", {
-	title = S("Playing with Fire"),
-	description = S("Pick up a flaming rod from the floor."),
-	icon = "vl_mobitems_flaming_rod.png",
+awards.register_achievement("mcl:blazeRod", {
+	title = S("Into Fire"),
+	description = S("Pick up a blaze rod from the floor."),
+	icon = "mcl_mobitems_blaze_rod.png",
 	type = "Advancement",
 	group = "Nether",
 })
@@ -157,14 +157,14 @@ awards.register_achievement("mcl:killCow", {
 })
 awards.register_achievement("mcl:mineWood", {
 	title = S("Getting Wood"),
-	description = S("Pick up a wooden item from the ground.\nHint: Punch a tree trunk until it pops out as an item."),
+	description = S("Pick up a wood item from the ground.\nHint: Punch a tree trunk until it pops out as an item."),
 	icon = "default_tree.png",
 	type = "Advancement",
 	group = "Overworld",
 })
 
 awards.register_achievement("mcl:whosCuttingOnions", {
-	title = S("Who's Cutting Onions?"),
+	title = S("Who is Cutting Onions?"),
 	description = S("Pick up a crying obsidian from the floor."),
 	icon = "default_obsidian.png^mcl_core_crying_obsidian.png",
 	type = "Advancement",
@@ -425,7 +425,7 @@ awards.register_achievement("mcl:wax_on", {
 
 awards.register_achievement("mcl:wax_off", {
 	title = S("Wax Off"),
-	description = S("Scrape wax off a copper block."),
+	description = S("Scrape wax off of a copper block."),
 	icon = "default_tool_stoneaxe.png",
 	type = "Advancement",
 	group = "Husbandry",
@@ -434,7 +434,7 @@ awards.register_achievement("mcl:wax_off", {
 -- Triggered in mcl_smithing_table
 awards.register_achievement("mcl:trim", {
 	title = S("Crafting a New Look"),
-	description = S("Craft a trimmed armor at a smithing table."),
+	description = S("Craft a trimmed armor at a Smithing Table"),
 	icon = "dune_armor_trim_smithing_template.png",
 	type = "Advancement",
 	group = "Adventure",
@@ -531,7 +531,7 @@ end)
 
 awards.register_achievement("mcl:stoneAge", {
 	title		= S("Stone Age"),
-	description	= S("Mine stone with a new pickaxe."),
+	description	= S("Mine a stone with new pickaxe."),
 	icon		= "default_cobble.png",
 	type = "Advancement",
 	group = "Overworld",

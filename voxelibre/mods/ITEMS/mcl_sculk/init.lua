@@ -7,18 +7,9 @@ local mt_sound_play = minetest.sound_play
 local spread_to = {"mcl_core:stone","mcl_core:dirt","mcl_core:sand","mcl_core:dirt_with_grass","group:grass_block","mcl_core:andesite","mcl_core:diorite","mcl_core:granite","mcl_core:mycelium","group:dirt","mcl_end:end_stone","mcl_nether:netherrack","mcl_blackstone:basalt","mcl_nether:soul_sand","mcl_blackstone:soul_soil","mcl_crimson:warped_nylium","mcl_crimson:crimson_nylium","mcl_core:gravel"}
 
 local sounds = {
-	place    = {name = "mcl_sculk_block", gain = 0.6},
-	footstep = {name = "mcl_sculk_block", gain = 0.3},
-	dug      = {name = "mcl_sculk_block", gain = 0.6},
+	footstep = {name = "mcl_sculk_block", },
+	dug      = {name = "mcl_sculk_block", },
 }
-
-local gamerule_doSculkSpreading = true
-vl_tuning.setting("gamerule:doSculkSpreading", "bool", {
-	description = S("Whether sculk catalysts can spread sculk."),
-	default = true,
-	set = function(val) gamerule_doSculkSpreading = val end,
-	get = function() return gamerule_doSculkSpreading end,
-})
 
 local SPREAD_RANGE = 8
 local SENSOR_RANGE = 8
@@ -129,7 +120,6 @@ local function retrieve_close_spreadable_nodes (p)
 end
 
 local function spread_sculk (p, xp_amount)
-	if not gamerule_doSculkSpreading then return false end
 	local c = minetest.find_node_near(p,SPREAD_RANGE,{"mcl_sculk:catalyst"})
 	if c then
 		local nn = retrieve_close_spreadable_nodes (p)
@@ -204,7 +194,7 @@ minetest.register_node("mcl_sculk:sculk", {
 	is_ground_content = false,
 	on_destruct = sculk_on_destruct,
 	_mcl_blast_resistance = 0.2,
-	_mcl_hardness = 0.2,
+	_mcl_hardness = 0.6,
 	_mcl_silk_touch_drop = true,
 })
 

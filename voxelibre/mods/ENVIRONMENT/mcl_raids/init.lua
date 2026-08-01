@@ -2,13 +2,6 @@
 mcl_raids = {}
 local S = minetest.get_translator(minetest.get_current_modname())
 
-local gamerule_disableRaids = false
-vl_tuning.setting("gamerule:disableRaids", "bool", {
-	description = S("Whether raids are disabled"), default = false,
-	set = function(val) gamerule_disableRaids = val end,
-	get = function() return gamerule_disableRaids end,
-})
-
 -- Define the amount of illagers to spawn each wave.
 local waves = {
 	{
@@ -79,7 +72,7 @@ local oban_layers = {
 
 
 local oban_def = table.copy(minetest.registered_entities["mcl_banners:standing_banner"])
-oban_def.initial_properties.visual_size = { x=1, y=1 }
+oban_def.visual_size = { x=1, y=1 }
 local old_step = oban_def.on_step
 oban_def.on_step = function(self,dtime)
 	if not self.object:get_attach() then return self.object:remove() end
@@ -297,9 +290,7 @@ mcl_events.register_event("raid",{
 	health_max = 1,
 	exclusive_to_area = 128,
 	enable_bossbar = true,
-	cond_start  = function(_)
-		if gamerule_disableRaids then return false end
-
+	cond_start  = function(self)
 		--minetest.log("Cond start raid")
 		local r = {}
 		for _,p in pairs(minetest.get_connected_players()) do

@@ -118,7 +118,7 @@ minetest.register_node("mcl_mangrove:hanging_propagule_1", {
 			destroy_by_lava_flow = 1, compostability = 30
 		},
 	paramtype = "light",
-	paramtype2 = "none",
+	paramtype2 = "",
 	on_rotate = false,
 	walkable = false,
 	drop = "mcl_mangrove:propagule",
@@ -221,7 +221,7 @@ local wlroots = {
 	liquids_pointable = true,
 	drop = "mcl_mangrove:mangrove_roots",
 	groups = {
-		handy = 1, hoey = 1, water=4, liquid=3, puts_out_fire=1, dig_by_piston = 1, deco_block = 1,  not_in_creative_inventory=1 },
+		handy = 1, hoey = 1, water=3, liquid=3, puts_out_fire=1, dig_by_piston = 1, deco_block = 1, waterlogged = 1, not_in_creative_inventory=1 },
 	_mcl_blast_resistance = 100,
 	_mcl_hardness = -1, -- Hardness intentionally set to infinite instead of 100 (Minecraft value) to avoid problems in creative mode
 	on_construct = function(pos)
@@ -322,14 +322,14 @@ mcl_stairs.register_stair("mangrove_wood", "mcl_mangrove:mangrove_wood",
 	{handy=1,axey=1, flammable=3,wood_stairs=1, material_wood=1, fire_encouragement=5, fire_flammability=20},
 	{"mcl_mangrove_planks.png"},
 	S("Mangrove Wood Stairs"),
-	mcl_sounds.node_sound_wood_defaults(), nil, nil,
+	mcl_sounds.node_sound_wood_defaults(), 3, 2,
 	"woodlike")
 
 mcl_stairs.register_slab("mangrove_wood", "mcl_mangrove:mangrove_wood",
 	{handy=1,axey=1, flammable=3,wood_slab=1, material_wood=1, fire_encouragement=5, fire_flammability=20},
 	{"mcl_mangrove_planks.png"},
 	S("Mangrove Wood Slab"),
-	mcl_sounds.node_sound_wood_defaults(), nil, nil,
+	mcl_sounds.node_sound_wood_defaults(), 3, 2,
 	S("Double Mangrove Wood Slab"))
 
 minetest.register_craft({

@@ -10,12 +10,7 @@ import zipfile
 from .config import SUPPORTED_MINECRAFT_VERSION, home
 from collections import Counter
 import platform
-try:
-    from wand.image import Image
-except:
-    print("ERROR: Module \"Wand\" not found. You have to install it manually.\n")
-    print("Use this command: pip install wand")
-    exit(1)
+from wand.image import Image
 from wand.color import Color
 from wand.display import display
 import warnings

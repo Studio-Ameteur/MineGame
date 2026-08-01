@@ -1,17 +1,9 @@
 # textdomain: mcl_stairs
-##[ api.lua ]##
-
 Stairs are useful to reach higher places by walking over them; jumping is not required. Placing stairs in a corner pattern will create corner stairs. Stairs placed on the ceiling or at the upper half of the side of a block will be placed upside down.=Ступени нужны для подъема; по ним можно идти, прыгать не обязательно. Размещение ступенек на углах будет создавать угловые ступени. Ступени, устанавливаемые на потолке или на верхней половине боковой части блока, будет перевёрнуты вверх ногами.
-
 Double @1=Двойная @1
-
 Slabs are half as high as their full block counterparts and occupy either the lower or upper part of a block, depending on how it was placed. Slabs can be easily stepped on without needing to jump. When a slab is placed on another slab of the same type, a double slab is created.=Плиты в два раза ниже, чем их блочные аналоги, и занимают либо нижнюю, либо верхнюю часть блока, в зависимости от того, как они размещались. На плиты можно легко подниматься без необходимости прыгать. Когда плита помещается на другую плиту того же типа, создается двойная плита.
-
 Upper @1=Верхняя @1
-
 Double slabs are full blocks which are created by placing two slabs of the same kind on each other.=Двойные плиты это целые блоки, которые создаются путем размещения двух плит одного вида друг на друге.
-
-##[ register.lua ]##
 Oak Wood Stairs=Дубовые ступени
 Oak Wood Slab=Дубовая плита
 Double Oak Wood Slab=Двойная дубовая плита
@@ -30,9 +22,9 @@ Double Birch Wood Slab=Двойная берёзовая плита
 Dark Oak Wood Stairs=Ступени из тёмного дуба
 Dark Oak Wood Slab=Плита из тёмного дуба
 Double Dark Oak Wood Slab=Двойная плита из тёмного дуба
+Stone Stairs=Каменные ступени
 Stone Slab=Каменная плита
 Double Stone Slab=Двойная каменная плита
-Stone Stairs=Каменные ступени
 Polished Stone Slab=Плита из полированного камня
 Double Polished Stone Slab=Двойная плита из полированного камня
 Andesite Stairs=Андезитовые ступени
@@ -56,18 +48,12 @@ Double Brick Slab=Двойная кирпичная плита
 Sandstone Stairs=Ступени из песчаника
 Sandstone Slab=Плита из песчаника
 Double Sandstone Slab=Двойная плита из песчаника
-Cut Sandstone Stairs=
-Cut Sandstone Slab=
-Double Cut Sandstone Slab=
 Smooth Sandstone Stairs=Ступени из гладкого песчаника
 Smooth Sandstone Slab=Плита из гладкого песчаника
 Double Smooth Sandstone Slab=Двойная плита из гладкого песчаника
 Red Sandstone Stairs=Ступени из красного песчаника
 Red Sandstone Slab=Плита из красного песчаника
 Double Red Sandstone Slab=Двойная плита из красного песчаника
-Cut Red Sandstone Stairs=
-Cut Red Sandstone Slab=
-Double Cut Red Sandstone Slab=
 Smooth Red Sandstone Stairs=Ступени из гладкого красного песчаника
 Smooth Red Sandstone Slab=Плита из гладкого красного песчаника
 Double Smooth Red Sandstone Slab=Двойная плита из гладкого красного песчаника
@@ -98,11 +84,9 @@ Double Prismarine Slab=Двойная призмариновая плита
 Prismarine Brick Stairs=Ступени из призмаринового кирпича
 Prismarine Brick Slab=Плита из призмаринового кирпича
 Double Prismarine Brick Slab=Двойная плита из призмаринового кирпича
+Dark Prismarine Stairs=Ступени из тёмного призмарина
 Dark Prismarine Slab=Плита из тёмного призмарина
 Double Dark Prismarine Slab=Двойная плита из тёмного призмарина
-Mud Brick Stairs=Саманные ступени
-Mud Brick Slab=Саманная плита
-Double Mud Brick Slab=Двойная саманная плита
 Polished Andesite Slab=Плита из полированного андезита
 Double Polished Andesite Slab=Двойная плита из полированного андезита
 Polished Andesite Stairs=Ступени из полированного андезита
@@ -115,11 +99,6 @@ Polished Diorite Stairs=Ступени из полированного диор�
 Mossy Stone Brick Stairs=Ступени из замшелых каменных кирпичей
 Mossy Stone Brick Slab=Плита из замшелых каменных кирпичей
 Double Mossy Stone Brick Slab=Двойная плита из замшелых каменных кирпичей
-Stairs of Polished Gold Block=
-Slab of Polished Gold Block=
-Double Slab of Polished Gold=
-
-
-##### not used anymore #####
-
-Dark Prismarine Stairs=Ступени из тёмного призмарина
+Mud Brick Stair=Саманные ступени
+Mud Brick Slab=Саманная плита
+Double Mud Brick Slab=Двойная саманная плита

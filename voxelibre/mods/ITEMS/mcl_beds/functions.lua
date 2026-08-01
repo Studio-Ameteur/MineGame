@@ -10,8 +10,6 @@ local explosions_mod = minetest.get_modpath("mcl_explosions")
 local spawn_mod = minetest.get_modpath("mcl_spawn")
 local pos_to_dim = minetest.get_modpath("mcl_worlds") and mcl_worlds.pos_to_dimension or function(pos) return "overworld" end
 
-local gamerule_respawnBlocksExplode = vl_tuning.setting("gamerule:respawnBlocksExplode")
-
 local function mcl_log (message)
 	mcl_util.mcl_log (message, "[Beds]")
 end
@@ -60,13 +58,27 @@ local function check_in_beds(players)
 	return players_in_bed_setting() <= (player_in_bed * 100) / players_in_overworld(players)
 end
 
+-- These monsters do not prevent sleep
+local monster_exceptions = {
+	["mobs_mc:ghast"] = true,
+	["mobs_mc:enderdragon"] = true,
+	["mobs_mc:killer_bunny"] = true,
+	["mobs_mc:slime_big"] = true,
+	["mobs_mc:slime_small"] = true,
+	["mobs_mc:slime_tiny"] = true,
+	["mobs_mc:magma_cube_big"] = true,
+	["mobs_mc:magma_cube_small"] = true,
+	["mobs_mc:magma_cube_tiny"] = true,
+	["mobs_mc:shulker"] = true,
+}
+
 function mcl_beds.is_night(tod)
 	-- Values taken from Minecraft Wiki with offset of +600
 	if not tod then
 		tod = minetest.get_timeofday()
 	end
 	tod = ( tod * 24000 ) % 24000
-	return  tod > 18000 or tod < 5458
+	return  tod > 18541 or tod < 5458
 end
 
 local function lay_down(player, pos, bed_pos, state, skip)
@@ -85,7 +97,8 @@ local function lay_down(player, pos, bed_pos, state, skip)
 		bed_center = {x = bed_pos.x - dir.x/2, y = bed_pos.y + 0.1, z = bed_pos.z - dir.z/2}
 
 		-- save respawn position when entering bed
-		if spawn_mod and mcl_spawn.set_player_spawn_pos(player, bed_pos, true, true) then
+		if spawn_mod and mcl_spawn.set_spawn_pos(player, bed_pos, nil) then
+			minetest.chat_send_player(name, S("New respawn position set!"))
 			awards.unlock(player:get_player_name(), "mcl:sweetDreams")
 		end
 
@@ -106,20 +119,29 @@ local function lay_down(player, pos, bed_pos, state, skip)
 		end
 
 		-- No sleeping while moving. Slightly different behaviour than in MC.
-		-- FIXME: Velocity threshold should be 0.01 but Luanti 5.3.0
+		-- FIXME: Velocity threshold should be 0.01 but Minetest 5.3.0
 		-- sometimes reports incorrect Y speed. A velocity threshold
 		-- of 0.125 still seems good enough.
 		if vector.length(player:get_velocity() or player:get_player_velocity()) > 0.125 then
 			return false, S("You have to stop moving before going to bed!")
 		end
 
-		-- No sleeping if mobs are attacking.
-		for obj in core.objects_inside_radius(bed_pos, 16) do
+		-- No sleeping if monsters nearby.
+		for _, obj in pairs(minetest.get_objects_inside_radius(bed_pos, 8)) do
 			if obj and not obj:is_player() then
 				local ent = obj:get_luaentity()
-
-				if ent.is_mob and ent.attack == player then
-					return false, S("You can't sleep now, you are under attack!")
+				local mobname = ent.name
+				local def = minetest.registered_entities[mobname]
+				-- Approximation of monster detection range
+				if def.is_mob and (def.type == "monster" or mobname == "mobs_mc:zombified_piglin") then
+					if monster_exceptions[mobname] or
+							(mobname == "mobs_mc:zombified_piglin" and ent.state ~= "attack") then
+						-- Some exceptions do not prevent sleep. Zombie piglin only prevent sleep while they are hostile.
+					else
+						if math.abs(bed_pos.y - obj:get_pos().y) <= 5 then
+							return false, S("You can't sleep now, monsters are nearby!")
+						end
+					end
 				end
 
 			end
@@ -224,11 +246,11 @@ local function update_formspecs(finished, players)
 			form_n = form_n .. bg_sleep
 			form_n = form_n .. button_abort
 		else
-			local comment
+			local comment = "You will fall asleep when "
 			if players_in_bed_setting() == 100 then
-				comment = S("You will fall asleep when all players are in bed.")
+				comment = S(comment .. "all players are in bed.")
 			else
-				comment = S("You will fall asleep when @1% of all players are in bed.", players_in_bed_setting())
+				comment = S(comment .. "@1% of all players are in bed.", players_in_bed_setting())
 			end
 			text = text .. "\n" .. comment
 			form_n = form_n .. bg_presleep
@@ -362,7 +384,7 @@ function mcl_beds.on_rightclick(pos, player, is_top)
 
 		minetest.remove_node(pos)
 		minetest.remove_node(string.sub(node.name, -4) == "_top" and vector.subtract(pos, dir) or vector.add(pos, dir))
-		if explosions_mod and gamerule_respawnBlocksExplode.getter() then
+		if explosions_mod then
 			mcl_explosions.explode(pos, 5, {drop_chance = 1.0, fire = true})
 		end
 		return

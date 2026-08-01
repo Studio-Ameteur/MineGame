@@ -1,3 +1,5 @@
+--License for code WTFPL and otherwise stated in readmes
+
 local S = minetest.get_translator("mobs_mc")
 
 local rabbit = {
@@ -8,27 +10,26 @@ local rabbit = {
 	spawn_in_group = 3,
 	passive = true,
 	reach = 1,
-	initial_properties = {
-		hp_min = 3,
-		hp_max = 3,
-		collisionbox = {-0.2, -0.01, -0.2, 0.2, 0.49, 0.2},
-	},
+	hp_min = 3,
+	hp_max = 3,
 	xp_min = 1,
 	xp_max = 3,
+	collisionbox = {-0.2, -0.01, -0.2, 0.2, 0.49, 0.2},
 	head_swivel = "head.control",
-	head_eye_height = 0.35,
-	head_bone_position = vector.new( 0, 2, -.3 ), -- for minetest <= 5.8
+	bone_eye_height = 2,
+	head_eye_height = 0.5,
+	horizontal_head_height = -.3,
 	curiosity = 20,
 	head_yaw="z",
 	visual = "mesh",
 	mesh = "mobs_mc_rabbit.b3d",
 	textures = {
-		{"mobs_mc_rabbit_brown.png"},
-		{"mobs_mc_rabbit_gold.png"},
-		{"mobs_mc_rabbit_white.png"},
-		{"mobs_mc_rabbit_white_splotched.png"},
-		{"mobs_mc_rabbit_salt.png"},
-		{"mobs_mc_rabbit_black.png"},
+        {"mobs_mc_rabbit_brown.png"},
+        {"mobs_mc_rabbit_gold.png"},
+        {"mobs_mc_rabbit_white.png"},
+        {"mobs_mc_rabbit_white_splotched.png"},
+        {"mobs_mc_rabbit_salt.png"},
+        {"mobs_mc_rabbit_black.png"},
 	},
 	sounds = {
 		random = "mobs_mc_rabbit_random",
@@ -44,11 +45,10 @@ local rabbit = {
 	follow_velocity = 1.1,
 	floats = 1,
 	runaway = true,
-	runaway_from = {"mobs_mc:wolf"},
 	jump = true,
 	drops = {
 		{name = "mcl_mobitems:rabbit", chance = 1, min = 0, max = 1, looting = "common",},
-		{name = "mcl_mobitems:leather_piece", chance = 1, min = 0, max = 1, looting = "common",},
+		{name = "mcl_mobitems:rabbit_hide", chance = 1, min = 0, max = 1, looting = "common",},
 		{name = "mcl_mobitems:rabbit_foot", chance = 10, min = 0, max = 1, looting = "rare", looting_factor = 0.03,},
 	},
 	fear_height = 4,
@@ -133,26 +133,25 @@ mcl_mobs.register_mob("mobs_mc:killer_bunny", killer_bunny)
 -- Mob spawning rules.
 -- Different skins depending on spawn location <- we'll get to this when the spawning algorithm is fleshed out
 
-mcl_mobs:spawn_setup({
-	name = "mobs_mc:rabbit",
-	dimension = "overworld",
-	type_of_spawning = "ground",
-	biomes = {
-		"Desert",
-		"FlowerForest",
-		"Taiga",
-		"MegaSpruceTaiga",
-		"MegaTaiga",
-		"ColdTaiga",
-	},
-	min_light = 9,
-	max_light = minetest.LIGHT_MAX+1,
-	chance = 40,
-	interval = 30,
-	aoc = 8,
-	min_height = mcl_vars.mg_overworld_min,
-	max_height = mcl_vars.mg_overworld_max
-})
+mcl_mobs:spawn_specific(
+"mobs_mc:rabbit",
+"overworld",
+"ground",
+{
+"Desert",
+"FlowerForest",
+"Taiga",
+"MegaSpruceTaiga",
+"MegaTaiga",
+"ColdTaiga",
+},
+9,
+minetest.LIGHT_MAX+1,
+30,
+40,
+8,
+mcl_vars.mg_overworld_min,
+mcl_vars.mg_overworld_max)
 
 --[[
 local spawn = {

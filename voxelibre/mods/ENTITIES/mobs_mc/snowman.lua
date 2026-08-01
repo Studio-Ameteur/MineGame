@@ -1,5 +1,7 @@
 --MCmobs v0.4
 --maikerumine
+--made for MC like Survival game
+--License for code WTFPL and otherwise stated in readmes
 
 local S = minetest.get_translator("mobs_mc")
 
@@ -23,11 +25,8 @@ mcl_mobs.register_mob("mobs_mc:snowman", {
 	type = "npc",
 	spawn_class = "passive",
 	passive = true,
-	initial_properties = {
-		hp_min = 4,
-		hp_max = 4,
-		collisionbox = {-0.35, -0.01, -0.35, 0.35, 1.89, 0.35},
-	},
+	hp_min = 4,
+	hp_max = 4,
 	pathfinding = 1,
 	view_range = 10,
 	fall_damage = 0,
@@ -35,6 +34,7 @@ mcl_mobs.register_mob("mobs_mc:snowman", {
 	rain_damage = 4,
 	armor = { fleshy = 100, water_vulnerable = 100 },
 	attacks_monsters = true,
+	collisionbox = {-0.35, -0.01, -0.35, 0.35, 1.89, 0.35},
 	visual = "mesh",
 	mesh = "mobs_mc_snowman.b3d",
 	sounds = {
@@ -140,9 +140,8 @@ mcl_mobs.register_mob("mobs_mc:snowman", {
 
 local summon_particles = function(obj)
 	local lua = obj:get_luaentity()
-	local cb = lua.initial_properties.collisionbox
-	local min = {x = cb[1], y = cb[2], z = cb[3]}
-	local max = {x = cb[4], y = cb[5], z = cb[6]}
+	local min = {x=lua.collisionbox[1], y=lua.collisionbox[2], z=lua.collisionbox[3]}
+	local max = {x=lua.collisionbox[4], y=lua.collisionbox[5], z=lua.collisionbox[6]}
 	local pos = obj:get_pos()
 	minetest.add_particlespawner({
 		amount = 60,

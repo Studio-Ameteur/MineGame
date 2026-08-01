@@ -44,7 +44,6 @@ end
 
 minetest.register_on_joinplayer(function(player, last_login)
 	get_player_tab(player)
-	player:get_inventory():set_size("distr", 1)
 end)
 
 minetest.register_on_leaveplayer(function(player, timed_out)
@@ -136,12 +135,10 @@ local main_page_static = table.concat({
 	"tooltip[__mcl_achievements;" .. F(S("Achievements")) .. "]",
 
 	--Listring
+	"listring[current_player;main]",
 	"listring[current_player;craft]",
 	"listring[current_player;main]",
-	"listring[current_player;distr]",
 	"listring[current_player;armor]",
-	"listring[current_player;main]",
-	"listring[current_player;offhand]",
 	"listring[current_player;main]",
 })
 
@@ -166,16 +163,7 @@ mcl_inventory.register_survival_inventory_tab({
 		if inv:get_stack("offhand", 1):is_empty() then
 			armor_slot_imgs = armor_slot_imgs .. "image[5.375,4.125;1,1;mcl_inventory_empty_armor_slot_shield.png]"
 		end
-		local main_list = main_page_static .. armor_slot_imgs .. mcl_player.get_player_formspec_model(player, 1.57, 0.4, 3.62, 4.85, "")
-		if core.check_player_privs(player, {server = true}) then
-			main_list = main_list .. table.concat({
-				-- Server Settings
-				"image_button[10.325,2.825;1.1,1.1;screwdriver.png;__vl_tuning;]",
-				--"style_type[image_button;border=;bgimg=;bgimg_pressed=]",
-				"tooltip[__vl_tuning;" .. F(S("Server Settings")) .. "]",
-			})
-		end
-		return main_list
+		return main_page_static .. armor_slot_imgs .. mcl_player.get_player_formspec_model(player, 1.57, 0.4, 3.62, 4.85, "")
 	end,
 	handle = function() end,
 })
@@ -237,90 +225,3 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		end
 	end
 end)
-
-core.register_allow_player_inventory_action(function (player, action, inventory, inventory_info)
-	if inventory_info.to_list ~= "distr" or action ~= "move" then
-		return
-	end
-
-	local fit_stack = inventory:get_stack(inventory_info.from_list, inventory_info.from_index)
-	local lim = mcl_armor.pub_limit_put(player, inventory, inventory_info.to_index, fit_stack, inventory_info.count)
-	if lim > 0 then
-		return lim
-	end
-
-	if inventory:get_stack("offhand", 1):is_empty()
-			and core.get_item_group(fit_stack:get_name(), "offhand_item") > 0 then
-		return fit_stack:get_count()
-	end
-
-	-- If stack can fit as a whole
-	if inventory:room_for_item("craft", fit_stack) then
-		return fit_stack:get_count()
-	end
-
-	-- Otherwise, count how much of it can fit
-	local can_fit_amount = 0
-	fit_stack:set_count(1)
-	for i=1, inventory:get_size("craft") do
-		local craft_stack = inventory:get_stack("craft", i)
-		local free_space = craft_stack:get_free_space()
-		craft_stack:set_count(1)
-		if craft_stack:equals(fit_stack) then
-			can_fit_amount = can_fit_amount + free_space
-		end
-	end
-
-	return can_fit_amount
-end)
-
-core.register_on_player_inventory_action(function(player, action, inventory, inventory_info)
-	if inventory_info.to_list ~= "distr" or action ~= "move" then
-		return
-	end
-	
-	local stack = inventory:get_stack(inventory_info.to_list, inventory_info.to_index)
-	if mcl_armor.pub_limit_put(player, inventory, inventory_info.to_index, stack, inventory_info.count) > 0 then
-		mcl_armor.equip(stack, player)
-		inventory:set_stack("distr", 1, nil)
-		return
-	end
-
-	if inventory:get_stack("offhand", 1):is_empty()
-			and core.get_item_group(stack:get_name(), "offhand_item") > 0 then
-		inventory:set_stack("offhand", 1, stack)
-		inventory:set_stack("distr", 1, nil)
-		mcl_inventory.update_inventory_formspec(player)
-		return
-	end
-
-	local leftover = inventory:add_item("craft", stack)
-	if not leftover:is_empty() then
-		core.add_item(player:get_pos(), leftover)
-		core.log("warning", "Distribution overflow! Player: " .. player:get_player_name()
-			.. ";\n leftover: " .. leftover:get_name() .. " " .. leftover:get_count()
-			.. ";\n offhand: " .. inventory:get_stack("offhand", 1):get_name()
-			.. " " .. inventory:get_stack("offhand", 1):get_count()
-
-			.. ";\n armor1 : " .. inventory:get_stack("armor", 1):get_name()
-			.. " " .. inventory:get_stack("armor", 1):get_count()
-			.. ";\n armor2 : " .. inventory:get_stack("armor", 2):get_name()
-			.. " " .. inventory:get_stack("armor", 2):get_count()
-			.. ";\n armor3 : " .. inventory:get_stack("armor", 3):get_name()
-			.. " " .. inventory:get_stack("armor", 3):get_count()
-			.. ";\n armor4 : " .. inventory:get_stack("armor", 4):get_name()
-			.. " " .. inventory:get_stack("armor", 4):get_count()
-
-			.. ";\n craft1 : " .. inventory:get_stack("craft", 1):get_name()
-			.. " " .. inventory:get_stack("craft", 1):get_count()
-			.. ";\n craft2 : " .. inventory:get_stack("craft", 2):get_name()
-			.. " " .. inventory:get_stack("craft", 2):get_count()
-			.. ";\n craft3 : " .. inventory:get_stack("craft", 3):get_name()
-			.. " " .. inventory:get_stack("craft", 3):get_count()
-			.. ";\n craft4 : " .. inventory:get_stack("craft", 4):get_name()
-			.. " " .. inventory:get_stack("craft", 4):get_count()
-		)
-	end
-	inventory:set_stack("distr", 1, nil)
-end)
-

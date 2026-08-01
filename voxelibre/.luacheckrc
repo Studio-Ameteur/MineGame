@@ -25,7 +25,6 @@ read_globals = {
 			"indexof",
 			"insert_all",
 			"key_value_swap",
-			"shuffle",
 		}
 	},
 

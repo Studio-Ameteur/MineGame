@@ -6,47 +6,43 @@
 ## Creator of VoxeLibre
 * Wuzzy
 
-## Maintainer
+## Maintainers
+* AncientMariner
 * Herowl
 
 ## Previous Maintainers
 * Fleckenstein
-* kay27
 * cora
 * Nicu
-* AncientMariner
 
 ## Developers
 * AFCMS
 * epCode
-* TomCon / SmokeyDope
+* chmodsayshello
+* MrRar
+* FossFanatic 
+* SmokeyDope
+* Faerraven / Michieal
+* Codiac
+* rudzik8
 * teknomunk
-* AncientMariner
-* Archie / andro
-* ralisv / Nixprland
 
 ## Past Developers
 * jordan4ibanez
-* ryvnf
 * iliekprogrammar
 * kabou
+* kay27
 * MysticTempest
 * NO11
 * SumianVoice
 * PrairieWind
-* FossFanatic
-* Codiac
-* chmodsayshello
-* MrRar
-* rudzik8
-* kno10
-* Faerraven / Michieal
 
 ## Contributors
 * RandomLegoBrick
 * Code-Sploit
 * aligator
 * Rootyjr
+* ryvnf
 * bzoss
 * talamh
 * Laurent Rocher
@@ -75,7 +71,7 @@
 * Tianyang Zhang
 * j45
 * Marcin Serwin
-* erle
+* erlehmann
 * E
 * n_to
 * debiankaios
@@ -144,39 +140,6 @@
 * SOS-Games
 * Bram
 * qoheniac
-* WillConker
-* 0ldude
-* tacotexmex
-* Pixel-Peter
-* OgelGames
-* blitzdoughnuts
-* goodspeed
-* Bloodaxe
-* ClementMR
-* THE-NERD2
-* ethan
-* villager8472
-* ninjum
-* OpenSauce04
-* grillo-delmal
-* Yoric
-* potatoalienof13
-* HalfShadow111
-* cyberonkel
-* oku
-* fancyfinn9
-* Chiragon
-* newrizen
-* wrrrzr
-* antimundo
-* farfind
-* WolfySoy
-* sled314
-* Skivling
-* Delta
-* TANGaming
-* SecretVoxelPlayer
-* olivia-may
 
 ## Music
 * Jordach for the jukebox music compilation from Big Freaking Dig
@@ -221,7 +184,6 @@
 * Faerraven / Michieal
 * PrairieWind
 * ChrisPHP
-* rudzik8
 
 ## 3D Models
 * 22i
@@ -230,8 +192,6 @@
 * Faerraven / Michieal
 * SumianVoice
 * thunder1035
-* Herowl
-* Chiragon
 
 ## Textures
 * XSSheep
@@ -253,10 +213,6 @@
 * SmokeyDope
 * thunder1035
 * Herowl
-* NovaWostra
-* rudzik8
-* kno10
-* Chiragon
 
 ## Translations
 * Wuzzy
@@ -280,18 +236,6 @@
 * ADLON
 * Sab Pyrope
 * JoseDouglas26
-* 0ldude
-* Bloodaxe
-* ethan
-* Herowl
-* kno10
-* Pixel-Peter
-* Laudrin
-* chmodsayshello
-* ninjum
-* HalfShadow111
-* newrizen
-* antimundo
 
 ## Funders
 * 40W
@@ -299,6 +243,6 @@
 * Cora
 
 ## Special thanks
-* The Luanti team for making and supporting an engine, and distribution infrastructure that makes this all possible
+* The Minetest team for making and supporting an engine, and distribution infrastructure that makes this all possible
 * The workaholics who spent way too much time writing for the Minecraft Wiki. It's an invaluable resource for creating this game
 * Notch and Jeb for being the major forces behind Minecraft

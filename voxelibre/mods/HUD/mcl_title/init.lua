@@ -83,33 +83,33 @@ minetest.register_on_joinplayer(function(player)
 	}
 	local _, hex_color = get_color("white")
 	huds_idx.title[player] = player:hud_add({
-		[mcl_vars.hud_type_field] = "text",
+		hud_elem_type = "text",
 		position      = mcl_title.layout.title.position,
 		alignment     = mcl_title.layout.title.alignment,
 		text          = "",
 		style         = no_style,
-		size          = { x = mcl_title.layout.title.size, y = 0 },
+		size          = { x = mcl_title.layout.title.size },
 		number        = hex_color,
 		z_index       = 100,
 	})
 	huds_idx.subtitle[player] = player:hud_add({
-		[mcl_vars.hud_type_field] = "text",
+		hud_elem_type = "text",
 		position      = mcl_title.layout.subtitle.position,
 		alignment     = mcl_title.layout.subtitle.alignment,
 		text          = "",
 		style         = no_style,
-		size          = { x = mcl_title.layout.subtitle.size, y = 0 },
+		size          = { x = mcl_title.layout.subtitle.size },
 		number        = hex_color,
 		z_index       = 100,
 	})
 	huds_idx.actionbar[player] = player:hud_add({
-		[mcl_vars.hud_type_field] = "text",
+		hud_elem_type = "text",
 		position      = mcl_title.layout.actionbar.position,
 		offset        = { x = 0, y = -210 },
 		alignment     = mcl_title.layout.actionbar.alignment,
 		style         = no_style,
 		text          = "",
-		size          = { x = mcl_title.layout.actionbar.size, y = 0 },
+		size          = { x = mcl_title.layout.actionbar.size },
 		number        = hex_color,
 		z_index       = 100,
 	})

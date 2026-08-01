@@ -42,7 +42,7 @@ This mod adds mobs which closely resemble the mobs from the game Minecraft, vers
 * Zombie Piglin
 * Wither Skeleton
 * Magma Cube
-* Fire Elemental
+* Blaze
 * Ghast
 * Evoker
 * Vex

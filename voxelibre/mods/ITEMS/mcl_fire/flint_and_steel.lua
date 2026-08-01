@@ -31,22 +31,23 @@ minetest.register_tool("mcl_fire:flint_and_steel", {
 			{pos = pointed_thing.above, gain = 0.5, max_hear_distance = 8},
 			true
 		)
-		local used = nil
+		local used = false
 		if pointed_thing.type == "node" then
 			local nodedef = minetest.registered_nodes[get_node(pointed_thing.under).name]
 			if nodedef and nodedef._on_ignite then
 				local overwrite = nodedef._on_ignite(user, pointed_thing)
 				if not overwrite then
-					used = mcl_fire.set_fire(pointed_thing, user, false)
+					mcl_fire.set_fire(pointed_thing, user, false)
 				end
 			else
-				used = mcl_fire.set_fire(pointed_thing, user, false)
+				mcl_fire.set_fire(pointed_thing, user, false)
 			end
+			used = true
 		end
 		if itemstack:get_count() == 0 and idef.sound and idef.sound.breaks then
 			minetest.sound_play(idef.sound.breaks, {pos=user:get_pos(), gain=0.5}, true)
 		end
-		if (not minetest.is_creative_enabled(user:get_player_name())) and used then
+		if (not minetest.is_creative_enabled(user:get_player_name())) and used == true then
 			itemstack:add_wear(65535/65) -- 65 uses
 		end
 		return itemstack

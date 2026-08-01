@@ -1,5 +1,7 @@
 local S = minetest.get_translator(minetest.get_current_modname())
 
+-- Taken from https://minecraft.gamepedia.com/Enchanting
+
 local function increase_damage(damage_group, factor)
 	return function(itemstack, level)
 		local tool_capabilities = itemstack:get_tool_capabilities()
@@ -8,18 +10,18 @@ local function increase_damage(damage_group, factor)
 	end
 end
 
--- implemented via on_enchant, additions in mobs_mc and in combat.lua
+-- implemented via on_enchant and additions in mobs_mc; Slowness IV part unimplemented
 mcl_enchanting.enchantments.bane_of_arthropods = {
 	name = S("Bane of Arthropods"),
 	max_level = 5,
-	primary = {sword = true, spear = true},
-	secondary = {axe = true, hammer = true},
+	primary = {sword = true},
+	secondary = {axe = true},
 	disallow = {},
-	incompatible = {smite = true, sharpness = true, impaling = true},
+	incompatible = {smite = true, sharpness = true},
 	weight = 5,
 	description = S("Increases damage and applies Slowness IV to arthropod mobs (spiders, cave spiders, silverfish and endermites)."),
 	curse = false,
-	on_enchant = increase_damage("arthropod", 2.5),
+	on_enchant = increase_damage("anthropod", 2.5),
 	requires_tool = false,
 	treasure = false,
 	power_range_table = {{5, 25}, {13, 33}, {21, 41}, {29, 49}, {37, 57}},
@@ -27,7 +29,7 @@ mcl_enchanting.enchantments.bane_of_arthropods = {
 	inv_tool_tab = false,
 }
 
--- TODO adjust, fix and improve lightning to support this (and feel powerful)
+-- requires missing MineClone2 feature
 --[[mcl_enchanting.enchantments.channeling = {
 	name = S("Channeling"),
 	max_level = 1,
@@ -65,15 +67,6 @@ mcl_enchanting.enchantments.curse_of_vanishing = {
 	inv_tool_tab = true,
 }
 
-mcl_death_drop.register_on_death_drop_per_stack(function (player, inv, listname, idx, stack)
-	if mcl_enchanting.has_enchantment(stack, "curse_of_vanishing") then
-		inv:set_stack(listname, idx, nil)
-		return true
-	end
-	return false
-end)
-
-
 -- implemented in mcl_playerplus
 mcl_enchanting.enchantments.depth_strider = {
 	name = S("Depth Strider"),
@@ -97,7 +90,7 @@ mcl_enchanting.enchantments.depth_strider = {
 mcl_enchanting.enchantments.efficiency = {
 	name = S("Efficiency"),
 	max_level = 5,
-	primary = {pickaxe = true, shovel = true, axe = true, hoe = true, hammer = true},
+	primary = {pickaxe = true, shovel = true, axe = true, hoe = true},
 	secondary = {shears = true},
 	disallow = {},
 	incompatible = {},
@@ -119,8 +112,8 @@ mcl_enchanting.enchantments.efficiency = {
 mcl_enchanting.enchantments.fire_aspect = {
 	name = S("Fire Aspect"),
 	max_level = 2,
-	primary = {sword = true, spear = true},
-	secondary = {axe = true, hammer = true},
+	primary = {sword = true},
+	secondary = {},
 	disallow = {},
 	incompatible = {},
 	weight = 2,
@@ -212,8 +205,7 @@ walkover.register_global(function(pos, _, player)
 	if frost_walker <= 0 then
 		return
 	end
-	-- 1011 = sqrt(4096000)/2; 4096000 is the max number of nodes for find_nodes_in_area_under_air
-	local radius = math.min(frost_walker + 2, 1011)
+	local radius = frost_walker + 2
 	local minp = {x = pos.x - radius, y = pos.y, z = pos.z - radius}
 	local maxp = {x = pos.x + radius, y = pos.y, z = pos.z + radius}
 	local positions = minetest.find_nodes_in_area_under_air(minp, maxp, "mcl_core:water_source")
@@ -224,24 +216,24 @@ walkover.register_global(function(pos, _, player)
 	end
 end)
 
--- implemented via on_enchant
-mcl_enchanting.enchantments.impaling = {
+-- requires missing MineClone2 feature
+--[[mcl_enchanting.enchantments.impaling = {
 	name = S("Impaling"),
 	max_level = 5,
 	primary = {trident = true},
 	secondary = {},
 	disallow = {},
-	incompatible = {smite = true, sharpness = true, bane_of_arthropods = true},
+	incompatible = {},
 	weight = 2,
 	description = S("Trident deals additional damage to ocean mobs."),
 	curse = false,
-	on_enchant = increase_damage("ocean", 2.5),
+	on_enchant = function() end,
 	requires_tool = false,
 	treasure = false,
 	power_range_table = {{1, 21}, {9, 29}, {17, 37}, {25, 45}, {33, 53}},
 	inv_combat_tab = true,
 	inv_tool_tab = false,
-}
+}]]--
 
 -- implemented in mcl_bows
 mcl_enchanting.enchantments.infinity = {
@@ -266,8 +258,8 @@ mcl_enchanting.enchantments.infinity = {
 mcl_enchanting.enchantments.knockback = {
 	name = S("Knockback"),
 	max_level = 2,
-	primary = {sword = true, hammer = true},
-	secondary = {axe = true, spear = true},
+	primary = {sword = true},
+	secondary = {},
 	disallow = {},
 	incompatible = {},
 	weight = 5,
@@ -292,8 +284,7 @@ function minetest.calculate_knockback(player, hitter, time_from_last_punch, tool
 		local wielditem = hitter:get_wielded_item()
 		--knockback = knockback + 3 * mcl_enchanting.get_enchantment(wielditem, "knockback")
 		local enchant = mcl_enchanting.get_enchantment(wielditem, "knockback")
-		local hammer = minetest.get_item_group(wielditem:get_name(), "hammer")
-		knockback = knockback + 3.22 * enchant + 3.22 * hammer
+		knockback = knockback + 3.22 * enchant
 		-- add vertical lift to knockback
 		local v = player:get_velocity()
 		local added_v = 0
@@ -364,8 +355,8 @@ end
 mcl_enchanting.enchantments.looting = {
 	name = S("Looting"),
 	max_level = 3,
-	primary = {sword = true, spear = true, hammer = true},
-	secondary = {axe = true},
+	primary = {sword = true},
+	secondary = {},
 	disallow = {},
 	incompatible = {},
 	weight = 2,
@@ -379,16 +370,16 @@ mcl_enchanting.enchantments.looting = {
 	inv_tool_tab = false,
 }
 
--- TODO deduplicate code in vl_tridents, then implement this in vl_weaponry
+-- requires missing MineClone2 feature
 --[[mcl_enchanting.enchantments.loyalty = {
 	name = S("Loyalty"),
 	max_level = 3,
-	primary = {spear = true},
+	primary = {trident = true},
 	secondary = {},
 	disallow = {},
 	incompatible = {riptide = true},
 	weight = 5,
-	description = S("Spear returns after being thrown. Higher levels reduce return time."),
+	description = S("Trident returns after being thrown. Higher levels reduce return time."),
 	curse = false,
 	on_enchant = function() end,
 	requires_tool = false,
@@ -482,7 +473,6 @@ mcl_experience.register_on_add_xp(function(player, xp)
 		local can = final_candidates[math.random(#final_candidates)]
 		local stack, list, index, wear = can.stack, can.list, can.index, can.wear
 		local uses = mcl_util.calculate_durability(stack)
-		    / (mcl_enchanting.get_enchantment(stack, "unbreaking") + 1)
 		local multiplier = 2 * 65535 / uses
 		local repair = xp * multiplier
 		local new_wear = wear - repair
@@ -638,10 +628,10 @@ mcl_enchanting.enchantments.quick_charge = {
 mcl_enchanting.enchantments.sharpness = {
 	name = S("Sharpness"),
 	max_level = 5,
-	primary = {sword = true, spear = true},
-	secondary = {axe = true, hammer = true},
+	primary = {sword = true},
+	secondary = {axe = true},
 	disallow = {},
-	incompatible = {bane_of_arthropods = true, smite = true, impaling = true},
+	incompatible = {bane_of_arthropods = true, smite = true},
 	weight = 5,
 	description = S("Increases damage."),
 	curse = false,
@@ -676,10 +666,10 @@ mcl_enchanting.enchantments.silk_touch = {
 mcl_enchanting.enchantments.smite = {
 	name = S("Smite"),
 	max_level = 5,
-	primary = {sword = true, hammer = true},
-	secondary = {axe = true, spear = true},
+	primary = {sword = true},
+	secondary = {axe = true},
 	disallow = {},
-	incompatible = {bane_of_arthropods = true, sharpness = true, impaling = true},
+	incompatible = {bane_of_arthropods = true, sharpness = true},
 	weight = 5,
 	description = S("Increases damage to undead mobs."),
 	curse = false,
@@ -700,7 +690,7 @@ mcl_enchanting.enchantments.soul_speed = {
 	disallow = {non_combat_armor = true},
 	incompatible = {frost_walker = true},
 	weight = 2,
-	description = S("Increases walking speed on soul sand and soul soil."),
+	description = S("Increases walking speed on soul sand."),
 	curse = false,
 	on_enchant = function() end,
 	requires_tool = false,
@@ -733,11 +723,9 @@ mcl_enchanting.enchantments.soul_speed = {
 mcl_enchanting.enchantments.unbreaking = {
 	name = S("Unbreaking"),
 	max_level = 3,
-	primary = {armor_head = true, armor_torso = true, armor_legs = true, armor_feet = true, pickaxe = true, shovel = true, axe = true, hoe = true, fishing_rod = true, weapon = true},
+	primary = {armor_head = true, armor_torso = true, armor_legs = true, armor_feet = true, pickaxe = true, shovel = true, axe = true, hoe = true, sword = true, fishing_rod = true, bow = true},
 	secondary = {tool = true},
-	-- Commented to allow elytra to be enchanted
-	--disallow = {non_combat_armor = true},
-	disallow = {},
+	disallow = {non_combat_armor = true},
 	incompatible = {},
 	weight = 5,
 	description = S("Increases item durability."),
@@ -760,23 +748,4 @@ mcl_enchanting.enchantments.unbreaking = {
 	power_range_table = {{5, 61}, {13, 71}, {21, 81}},
 	inv_combat_tab = true,
 	inv_tool_tab = true,
-}
-
--- implemented in mcl_playerplus
-mcl_enchanting.enchantments.swift_sneak = {
-	name = S("Swift Sneak"),
-	max_level = 3,
-	primary = {},
-	secondary = {armor_legs = true},
-	disallow = {non_combat_armor = true},
-	incompatible = {},
-	weight = 1,
-	description = S("Increases movement speed while sneaking."),
-	curse = false,
-	on_enchant = function() end,
-	requires_tool = false,
-	treasure = true,
-	power_range_table = {{25, 75}, {50, 100}, {75, 125}},
-	inv_combat_tab = true,
-	inv_tool_tab = false,
 }

@@ -1,19 +1,19 @@
 # textdomain: mcl_credits
-An open-source survival sandbox game in the spirit of Infiniminer and Minecraft=
-Sneak to skip=
-Jump to speed up (additionally sprint)=
-##[ people.lua ]##
+3D Models=
+A faithful Open Source clone of Minecraft=
+Contributors=
 Creator of MineClone=
 Creator of VoxeLibre=
-Maintainer=
-Previous Maintainers=
 Developers=
 Past Developers=
-Contributors=
-Music=
+Jump to speed up (additionally sprint)=
+Maintainers=
+Previous Maintainers=
+MineClone5=
 Original Mod Authors=
-3D Models=
+Sneak to skip=
 Textures=
 Translations=
+Music=
 Funders=
 Special thanks=

@@ -1,3 +1,5 @@
+--License for code WTFPL and otherwise stated in readmes
+
 local S = minetest.get_translator("mobs_mc")
 
 --###################
@@ -11,22 +13,21 @@ mcl_mobs.register_mob("mobs_mc:polar_bear", {
 	spawn_class = "passive",
 	runaway = false,
 	passive = false,
-	initial_properties = {
-		hp_min = 30,
-		hp_max = 30,
-		breath_max = -1,
-		collisionbox = {-0.7, -0.01, -0.7, 0.7, 1.39, 0.7},
-	},
+	hp_min = 30,
+	hp_max = 30,
 	xp_min = 1,
 	xp_max = 3,
+        breath_max = -1,
+	collisionbox = {-0.7, -0.01, -0.7, 0.7, 1.39, 0.7},
 	visual = "mesh",
 	mesh = "mobs_mc_polarbear.b3d",
 	textures = {
 		{"mobs_mc_polarbear.png"},
 	},
 	head_swivel = "head.control",
+	bone_eye_height = 2.6,
 	head_eye_height = 1,
-	head_bone_position = vector.new( 0, 2.396, 0 ), -- for minetest <= 5.8
+	horizontal_head_height = 0,
 	curiosity = 20,
 	head_yaw="z",
 	visual_size = {x=3.0, y=3.0},
@@ -73,23 +74,22 @@ mcl_mobs.register_mob("mobs_mc:polar_bear", {
 })
 
 
-mcl_mobs:spawn_setup({
-	name = "mobs_mc:polar_bear",
-	dimension = "overworld",
-	type_of_spawning = "ground",
-	biomes = {
-		"ColdTaiga",
-		"IcePlainsSpikes",
-		"IcePlains",
-	},
-	min_light = 0,
-	max_light = minetest.LIGHT_MAX+1,
-	chance = 50,
-	interval = 30,
-	aoc = 3,
-	min_height = mcl_vars.mg_overworld_min,
-	max_height = mcl_vars.mg_overworld_max
-})
+mcl_mobs:spawn_specific(
+"mobs_mc:polar_bear",
+"overworld",
+"ground",
+{
+"ColdTaiga",
+"IcePlainsSpikes",
+"IcePlains",
+},
+0,
+minetest.LIGHT_MAX+1,
+30,
+50,
+3,
+mcl_vars.mg_overworld_min,
+mcl_vars.mg_overworld_max)
 
 -- spawn egg
 mcl_mobs.register_egg("mobs_mc:polar_bear", S("Polar Bear"), "#f2f2f2", "#959590", 0)

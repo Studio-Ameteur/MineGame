@@ -1,4 +1,4 @@
-Luanti mod "Torches"
+Minetest mod "Torches"
 ======================
 
 (c) Copyright BlockMen (2013-2015)
@@ -53,7 +53,7 @@ https://github.com/BlockMen/torches
 
 Forum:
 ~~~~~~
-https://forum.luanti.org/viewtopic.php?id=6099
+https://forum.minetest.net/viewtopic.php?id=6099
 
 
 Changelog:

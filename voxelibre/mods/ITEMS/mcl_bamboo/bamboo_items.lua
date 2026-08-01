@@ -9,6 +9,8 @@ local SIDE_SCAFFOLDING = false
 local SIDE_SCAFFOLD_NAME = "mcl_bamboo:scaffolding_horizontal"
 -- ---------------------------------------------------------------------------
 local SCAFFOLDING_NAME = "mcl_bamboo:scaffolding"
+-- Used everywhere. Often this is just the name, but it makes sense to me as BAMBOO, because that's how I think of it...
+-- "BAMBOO" goes here.
 local BAMBOO = "mcl_bamboo:bamboo"
 local BAMBOO_PLANK = BAMBOO .. "_plank"
 
@@ -87,21 +89,21 @@ if minetest.get_modpath("mcl_stairs") then
 		mcl_stairs.register_stair_and_slab_simple(
 				"bamboo_block",
 				"mcl_bamboo:bamboo_block",
-				S("Bamboo Stairs"),
+				S("Bamboo Stair"),
 				S("Bamboo Slab"),
 				S("Double Bamboo Slab")
 		)
 		mcl_stairs.register_stair_and_slab_simple(
 				"bamboo_stripped",
 				"mcl_bamboo:bamboo_block_stripped",
-				S("Stripped Bamboo Stairs"),
+				S("Stripped Bamboo Stair"),
 				S("Stripped Bamboo Slab"),
 				S("Double Stripped Bamboo Slab")
 		)
 		mcl_stairs.register_stair_and_slab_simple(
 				"bamboo_plank",
 				BAMBOO_PLANK,
-				S("Bamboo Plank Stairs"),
+				S("Bamboo Plank Stair"),
 				S("Bamboo Plank Slab"),
 				S("Double Bamboo Plank Slab")
 		)
@@ -172,22 +174,15 @@ if minetest.get_modpath("mesecons_pressureplates") then
 end
 
 if minetest.get_modpath("mcl_signs") then
-	-- Bamboo Signs...
-	mcl_signs.register_sign("bamboo", "", {
-		description = S("Bamboo Sign"),
-		tiles = {"mcl_bamboo_bamboo_sign.png"},
-		inventory_image = "mcl_bamboo_bamboo_sign_wield.png",
-		wield_image = "mcl_bamboo_bamboo_sign_wield.png",
-	})
-	minetest.register_alias("bamboo_sign", "mcl_signs:wall_sign_bamboo")
-	minetest.register_craft({
-		output = "mcl_signs:wall_sign_bamboo 3",
-		recipe = {
-			{BAMBOO_PLANK, BAMBOO_PLANK, BAMBOO_PLANK},
-			{BAMBOO_PLANK, BAMBOO_PLANK, BAMBOO_PLANK},
-			{"", "mcl_core:stick", ""},
-		},
-	})
+	mcl_bamboo.mcl_log("Signs Section Entrance. Modpath exists.")
+	if mcl_signs ~= nil then
+		-- Bamboo Signs...
+		mcl_signs.register_sign_custom("mcl_bamboo", "_bamboo", "mcl_bamboo_bamboo_sign.png",
+				"#ffffff", "mcl_bamboo_bamboo_sign_wield.png", "mcl_bamboo_bamboo_sign_wield.png",
+				S("Bamboo Sign"))
+		mcl_signs.register_sign_craft("mcl_bamboo", BAMBOO_PLANK, "_bamboo")
+		minetest.register_alias("bamboo_sign", "mcl_signs:wall_sign_bamboo")
+	end
 end
 
 if minetest.get_modpath("mcl_fences") then
@@ -213,7 +208,7 @@ if minetest.get_modpath("mcl_fences") then
 		wood_groups,
 		minetest.registered_nodes["mcl_core:wood"]._mcl_hardness,
 		minetest.registered_nodes["mcl_core:wood"]._mcl_blast_resistance,
-		node_sound)
+		node_sound) -- note: about missing params.. will use defaults.
 
 	mcl_bamboo.mcl_log(dump(fence_id))
 	mcl_bamboo.mcl_log(dump(gate_id))
@@ -240,7 +235,7 @@ if minetest.get_modpath("mcl_stairs") then
 		mcl_stairs.register_stair_and_slab_simple(
 				"bamboo_mosaic",
 				"mcl_bamboo:bamboo_mosaic",
-				S("Bamboo Mosaic Stairs"),
+				S("Bamboo Mosaic Stair"),
 				S("Bamboo Mosaic Slab"),
 				S("Double Bamboo Mosaic Slab")
 		)
@@ -325,10 +320,6 @@ minetest.register_node(SCAFFOLDING_NAME, {
 			if wdir == 1 then
 				if (anode == "air" or minetest.registered_nodes[anode].buildable_to) and not mcl_bamboo.is_protected(pointed.above, placer) then
 					minetest.set_node(pointed.above, { name = SCAFFOLDING_NAME, param2 = 0 })
-	           		minetest.sound_play({name="default_wood_footstep", gain=1}, {
-					pos = pos,
-					max_hear_distance = 16,
-    				}, true)
 					if not minetest.is_creative_enabled(placer:get_player_name()) then
 						itemstack:take_item(1)
 					end
@@ -366,10 +357,6 @@ minetest.register_node(SCAFFOLDING_NAME, {
 
 				-- okay, we're good. place the node and take the item unless we are in creative mode.
 				minetest.set_node(pos, node)
-           		minetest.sound_play({name="default_wood_footstep", gain=1}, {
-				pos = pos,
-				max_hear_distance = 16,
-    			}, true)				
 				if not minetest.is_creative_enabled(placer:get_player_name()) then
 					itemstack:take_item(1)
 				end

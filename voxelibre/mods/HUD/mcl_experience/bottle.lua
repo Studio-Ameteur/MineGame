@@ -3,13 +3,11 @@ local S = minetest.get_translator(minetest.get_current_modname())
 local mod_target = minetest.get_modpath("mcl_target")
 
 minetest.register_entity("mcl_experience:bottle",{
-	initial_properties = {
-		hp_max = 1,
-		collisionbox = {-0.1, -0.1, -0.1, 0.1, 0.1, 0.1},
-		pointable = false,
-		visual_size = {x = 0.35, y = 0.35},
-		textures = {"mcl_experience_bottle.png"},
-	},
+	textures = {"mcl_experience_bottle.png"},
+	hp_max = 1,
+	visual_size = {x = 0.35, y = 0.35},
+	collisionbox = {-0.1, -0.1, -0.1, 0.1, 0.1, 0.1},
+	pointable = false,
 	on_step = function(self, dtime)
 		local pos = self.object:get_pos()
 		local node = minetest.get_node(pos)

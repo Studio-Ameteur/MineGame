@@ -6,20 +6,6 @@ local modname = minetest.get_current_modname()
 local path = minetest.get_modpath(modname)
 local S = minetest.get_translator(modname)
 mcl_mobs.fallback_node = minetest.registered_aliases["mapgen_dirt"] or "mcl_core:dirt"
-
--- used by the libaries below.
--- get node but use fallback for nil or unknown
-local node_ok = function(pos, fallback)
-	fallback = fallback or mcl_mobs.fallback_node
-	local node = minetest.get_node_or_nil(pos)
-	if node and minetest.registered_nodes[node.name] then
-		return node
-	end
-	return minetest.registered_nodes[fallback]
-end
-mcl_mobs.node_ok = node_ok
-dofile(path .. "/functions.lua")
-
 --api and helpers
 -- effects: sounds and particles mostly
 dofile(path .. "/effects.lua")
@@ -33,8 +19,9 @@ dofile(path .. "/items.lua")
 dofile(path .. "/pathfinding.lua")
 -- combat: attack logic
 dofile(path .. "/combat.lua")
--- the entity functions themselves
+-- the enity functions themselves
 dofile(path .. "/api.lua")
+
 
 --utility functions
 dofile(path .. "/breeding.lua")
@@ -49,6 +36,16 @@ local MAX_MOB_NAME_LENGTH = 30
 local old_spawn_icons = minetest.settings:get_bool("mcl_old_spawn_icons",false)
 local extended_pet_control = minetest.settings:get_bool("mcl_extended_pet_control",true)
 local difficulty = tonumber(minetest.settings:get("mob_difficulty")) or 1.0
+
+-- get node but use fallback for nil or unknown
+local node_ok = function(pos, fallback)
+	fallback = fallback or mcl_mobs.fallback_node
+	local node = minetest.get_node_or_nil(pos)
+	if node and minetest.registered_nodes[node.name] then
+		return node
+	end
+	return minetest.registered_nodes[fallback]
+end
 
 --#### REGISTER FUNCS
 
@@ -113,13 +110,18 @@ end
 mcl_mobs.spawning_mobs = {}
 -- register mob entity
 function mcl_mobs.register_mob(name, def)
-	assert(def.spawn_class, "Every mob needs a spawn class!")
 
 	mcl_mobs.spawning_mobs[name] = true
 	mcl_mobs.registered_mobs[name] = def
 
-	local can_despawn = def.can_despawn
-	if def.can_despawn == nil then can_despawn = def.spawn_class ~= "passive" end
+	local can_despawn
+	if def.can_despawn ~= nil then
+		can_despawn = def.can_despawn
+	elseif def.spawn_class == "passive" then
+		can_despawn = false
+	else
+		can_despawn = true
+	end
 
 	local function scale_difficulty(value, default, min, special)
 		if (not value) or (value == default) or (value == special) then
@@ -129,71 +131,32 @@ function mcl_mobs.register_mob(name, def)
 		end
 	end
 
-	local fly_in = {}
-	if type(def.fly_in) == "string" then
-		fly_in[def.fly_in] = true
-	elseif def.fly_in then
-		for k,v in pairs(def.fly_in) do
-			if type(k) == "number" then
-				fly_in[v] = true
-			elseif v == true then
-				fly_in[k] = true
-			else
-				minetest.log("warning", "mob "..name.." fly_in not understood: "..dump(k).." "..dump(v))
-			end
-		end
-	else
-		fly_in["air"] = true
+	local collisionbox = def.collisionbox or {-0.25, -0.25, -0.25, 0.25, 0.25, 0.25}
+	-- Workaround for <https://github.com/minetest/minetest/issues/5966>:
+	-- Increase upper Y limit to avoid mobs glitching through solid nodes.
+	-- FIXME: Remove workaround if it's no longer needed.
+	if collisionbox[5] < 0.79 then
+		collisionbox[5] = 0.79
 	end
-
-	-- Compatibility with old API
-	if def.hp_min or def.hp_max or def.breath_max then
-		core.log("warning", "mob "..name.." has deprecated placement of hp_min, hp_max and breath_max in base of mob defintion, move to initial_properties")
-	end
-	if not def.initial_properties then
-		def.initial_properties = {
-			hp_min = def.hp_min,
-			hp_max = def.hp_max,
-			breath_max = def.breath_max,
-		}
-	end
-
-	-- Initialize drops
-	local drops = {}
-	for _, drop in ipairs(def.drops or {}) do
-		drop = table.copy(drop)
-		drop.chance = drop.chance or 1
-		drop.looting = drop.looting or "common"
-		drop.min = drop.min or 1
-		drop.max = drop.max or drop.min
-		table.insert(drops, drop)
-	end
-
-	local collisionbox = def.collisionbox or def.initial_properties.collisionbox or {-0.25, -0.25, -0.25, 0.25, 0.25, 0.25}
-	local avg_radius = 0
-	for _, r in ipairs(collisionbox) do
-		avg_radius = avg_radius + math.abs(r)
-	end
-	avg_radius = avg_radius / 6
 	local final_def = {
+		use_texture_alpha = def.use_texture_alpha,
 		head_swivel = def.head_swivel or nil, -- bool to activate this function
-		head_yaw_offset = math.rad(def.head_yaw_offset or 0), -- for wonkey model bones
+		head_yaw_offset = def.head_yaw_offset or 0, -- for wonkey model bones
 		head_pitch_multiplier = def.head_pitch_multiplier or 1, --for inverted pitch
-		head_eye_height = def.head_eye_height or 1, -- how high approximately the mobs eyes are from the ground to tell the mob how high to look up at the player
-		head_max_yaw = def.head_max_yaw, -- how far the mob may turn the head
-		head_max_pitch = def.head_max_pitch, -- how far up and down the mob may pitch the head
-		head_bone_position = def.head_bone_position or { 0, def.bone_eye_height or 1.4, def.horizontal_head_height or 0},
+		bone_eye_height = def.bone_eye_height or 1.4, -- head bone offset
+		head_eye_height = def.head_eye_height or def.bone_eye_height or 0, -- how hight aproximatly the mobs head is fromm the ground to tell the mob how high to look up at the player
 		curiosity = def.curiosity or 1, -- how often mob will look at player on idle
 		head_yaw = def.head_yaw or "y", -- axis to rotate head on
-		head_scale = def.head_scale,
+		horizontal_head_height = def.horizontal_head_height or 0,
 		wears_armor = def.wears_armor, -- a number value used to index texture slot for armor
+		stepheight = def.stepheight or 0.6,
 		name = name,
 		description = def.description,
 		type = def.type,
 		attack_type = def.attack_type,
 		attack_frequency = def.attack_frequency,
 		fly = def.fly or false,
-		fly_in = fly_in,
+		fly_in = def.fly_in or {"air", "__airlike"},
 		owner = def.owner or "",
 		order = def.order or "",
 		on_die = def.on_die,
@@ -203,28 +166,21 @@ function mcl_mobs.register_mob(name, def)
 		jump_height = def.jump_height or 4, -- was 6
 		rotate = math.rad(def.rotate or 0), --  0=front, 90=side, 180=back, 270=side2
 		lifetimer = def.lifetimer or 57.73,
-		initial_properties = {
-			hp_min = scale_difficulty(def.initial_properties.hp_min, 5, 1),
-			hp_max = scale_difficulty(def.initial_properties.hp_max, 10, 1),
-			breath_max = (def.initial_properties and def.initial_properties.breath_max or def.breath_max) or 15,
-			physical = true,
-			collisionbox = collisionbox,
-			selectionbox = def.selectionbox or collisionbox,
-			visual = def.visual,
-			visual_size = def.visual_size or {x = 1, y = 1},
-			mesh = def.mesh,
-			glow = def.glow,
-			makes_footstep_sound = def.makes_footstep_sound or false,
-			stepheight = def.stepheight or 0.6,
-			automatic_face_movement_max_rotation_per_sec = 300,
-			use_texture_alpha = def.use_texture_alpha,
-		},
+		hp_min = scale_difficulty(def.hp_min, 5, 1),
+		hp_max = scale_difficulty(def.hp_max, 10, 1),
 		xp_min = def.xp_min or 0,
 		xp_max = def.xp_max or 0,
 		xp_timestamp = 0,
 		invul_timestamp = 0,
+		breath_max = def.breath_max or 15,
 		breathes_in_water = def.breathes_in_water or false,
-		spawnbox = def.spawnbox or collisionbox,
+		physical = true,
+		collisionbox = collisionbox,
+		selectionbox = def.selectionbox or def.collisionbox,
+		visual = def.visual,
+		visual_size = def.visual_size or {x = 1, y = 1},
+		mesh = def.mesh,
+		makes_footstep_sound = def.makes_footstep_sound or false,
 		view_range = def.view_range or 16,
 		walk_velocity = def.walk_velocity or 1,
 		run_velocity = def.run_velocity or 2,
@@ -237,7 +193,7 @@ function mcl_mobs.register_mob(name, def)
 		suffocation = def.suffocation or true,
 		fall_damage = def.fall_damage or 1,
 		fall_speed = def.fall_speed or DEFAULT_FALL_SPEED, -- must be lower than -2
-		drops = drops,
+		drops = def.drops or {},
 		armor = def.armor or 100,
 		on_rightclick = create_mob_on_rightclick(def.on_rightclick),
 		arrow = def.arrow,
@@ -248,13 +204,13 @@ function mcl_mobs.register_mob(name, def)
 		nofollow = def.nofollow,
 		can_open_doors = def.can_open_doors,
 		jump = def.jump ~= false,
+		automatic_face_movement_max_rotation_per_sec = 300,
 		walk_chance = def.walk_chance or 50,
 		attacks_monsters = def.attacks_monsters or false,
 		group_attack = def.group_attack or false,
 		passive = def.passive or false,
 		knock_back = def.knock_back ~= false,
 		shoot_offset = def.shoot_offset or 0,
-		shoot_pos = def.shoot_pos or vector.zero(),
 		floats = def.floats or 1, -- floats in water by default
 		floats_on_lava = def.floats_on_lava or 0,
 		replace_rate = def.replace_rate,
@@ -271,7 +227,6 @@ function mcl_mobs.register_mob(name, def)
 		hornytimer = 0,
 		gotten = false,
 		health = 0,
-		old_health = 0,
 		frame_speed_multiplier = 1,
 		reach = def.reach or 3,
 		htimer = 0,
@@ -305,7 +260,7 @@ function mcl_mobs.register_mob(name, def)
 		is_mob = true,
 		pushable = def.pushable or true,
 
-		-- VoxeLibre extensions
+		-- MCL2 extensions
 		shooter_avoid_enemy = def.shooter_avoid_enemy,
 		strafes = def.strafes,
 		avoid_distance = def.avoid_distance or 9,
@@ -314,6 +269,7 @@ function mcl_mobs.register_mob(name, def)
 		can_spawn = def.can_spawn,
 		ignores_nametag = def.ignores_nametag or false,
 		rain_damage = def.rain_damage or 0,
+		glow = def.glow,
 		can_despawn = can_despawn,
 		child = def.child or false,
 		texture_mods = {},
@@ -333,8 +289,7 @@ function mcl_mobs.register_mob(name, def)
 		noyaw = def.noyaw or false,
 		particlespawners = def.particlespawners,
 		spawn_check = def.spawn_check,
-		_vl_projectile = def._vl_projectile,
-		-- End of VoxeLibre extensions
+		-- End of MCL2 extensions
 		on_spawn = def.on_spawn,
 		on_blast = def.on_blast or function(self,damage)
 			self.object:punch(self.object, 1.0, {
@@ -344,37 +299,7 @@ function mcl_mobs.register_mob(name, def)
 			return false, true, {}
 		end,
 		do_punch = def.do_punch,
-		--- @param self core.ObjectRef
-		--- @param damage number
-		--- @param reason {type: string, direct: any?, source: any?}
-		deal_damage = function(self, damage, reason)
-			if (reason.direct and reason.direct:is_player()) or
-			   (reason.source and reason.source:is_player())
-			then
-				-- Flag the mob as taking damage from a player to drop XP and rare loot
-				self.xp_timestamp = core.get_us_time()
-			end
-
-			if def.deal_damage then
-				def.deal_damage(self, damage, reason)
-			else
-				-- Duplicated from mcl_util/init.lua, find_attacker_name() expanded inline
-				-- Without this logic, self:damage_mob() won't be called when mcl_init.deal_damage()
-				-- calls this damage handler, breaking things like burning damage
-				local reason_type = reason and reason.type or "generic"
-				local attacker_name = nil
-				local e = reason.direct and reason.direct:get_luaentity()
-				if e and e.name then
-					attacker_name = e.name
-				else
-					e = reason.source and reason.source:get_luaentity()
-					if e and e.name then
-						attacker_name = e.name
-					end
-				end
-				self:damage_mob(reason_type, damage, { attacker_name = attacker_name })
-			end
-		end,
+		deal_damage = def.deal_damage,
 		on_breed = def.on_breed,
 		on_grown = def.on_grown,
 		on_pick_up = def.on_pick_up,
@@ -401,7 +326,6 @@ function mcl_mobs.register_mob(name, def)
 
 		_spawner = def._spawner,
 		_mcl_potions = {},
-		_avg_radius = avg_radius,
 	}
 
 	if minetest.get_modpath("doc_identifier") ~= nil then
@@ -419,38 +343,6 @@ function mcl_mobs.register_mob(name, def)
 end -- END mcl_mobs.register_mob function
 
 
-local STRIP_FIELDS = { "mesh", "base_size", "textures", "base_mesh", "base_texture" }
----@param unpacked_staticdata table
-function mcl_mobs.strip_staticdata(unpacked_staticdata)
-	-- Strip select fields from the staticdata to prevent conversion issues
-	for i = 1,#STRIP_FIELDS do
-		unpacked_staticdata[STRIP_FIELDS[i]] = nil
-	end
-end
-function mcl_mobs.register_conversion(old_name, new_name)
-	minetest.register_entity(old_name, {
-		on_activate = function(self, staticdata, dtime)
-			local unpacked_staticdata = minetest.deserialize(staticdata) or {}
-			mcl_mobs.strip_staticdata(unpacked_staticdata)
-			staticdata = minetest.serialize(unpacked_staticdata)
-
-			local old_object = self.object
-			if not old_object then return end
-
-			local pos = old_object:get_pos()
-			if not pos then return end
-			old_object:remove()
-
-			local new_object = minetest.add_entity(pos, new_name, staticdata)
-			if not new_object then return end
-
-			local hook = (new_object:get_luaentity() or {})._on_after_convert
-			if hook then hook(new_object) end
-		end,
-		_convert_to = new_name,
-	})
-end
-
 function mcl_mobs.get_arrow_damage_func(damage, typ)
 	local typ = mcl_damage.types[typ] and typ or "arrow"
 	return function(projectile, object)
@@ -460,29 +352,15 @@ end
 
 -- register arrow for shoot attack
 function mcl_mobs.register_arrow(name, def)
+
 	if not name or not def then return end -- errorcheck
 
-	local behaviors = {
-		vl_projectile.has_owner_grace_distance
-	}
-	if def.hit_node then
-		table.insert(behaviors, vl_projectile.collides_with_solids)
-	end
-	if def.hit_player or def.hit_mob or def.hit_object then
-		table.insert(behaviors, vl_projectile.collides_with_entities)
-	end
+	minetest.register_entity(name, {
 
-	vl_projectile.register(name, {
-		initial_properties = {
-			physical = false,
-			visual = def.visual,
-			visual_size = def.visual_size,
-			textures = def.textures,
-			collisionbox = def.collisionbox or {0, 0, 0, 0, 0, 0}, -- remove box around arrows
-			automatic_face_movement_dir = def.rotate
-				and (def.rotate - (math.pi / 180)) or false,
-			glow = def.glow,
-		},
+		physical = false,
+		visual = def.visual,
+		visual_size = def.visual_size,
+		textures = def.textures,
 		velocity = def.velocity,
 		hit_player = def.hit_player,
 		hit_node = def.hit_node,
@@ -490,82 +368,44 @@ function mcl_mobs.register_arrow(name, def)
 		hit_object = def.hit_object,
 		homing = def.homing,
 		drop = def.drop or false, -- drops arrow as registered item when true
+		collisionbox = {0, 0, 0, 0, 0, 0}, -- remove box around arrows
 		timer = 0,
 		switch = 0,
 		_lifetime = def._lifetime or 7,
 		owner_id = def.owner_id,
-		_vl_projectile = table.update(def._vl_projectile or {},{
-			behaviors = behaviors,
-			ignore_gravity = true,
-			damages_players = true,
-			allow_punching = function(self, entity_def, projectile_def, object)
-				if def.allow_punching and not def.allow_punching(self, entity_def, projectile_def, object) then
-					return false
-				elseif self.timer < 2 and self._owner and mcl_util.get_entity_id(object) == self._owner then
-					return false
-				end
-
-				return true
-			end,
-			on_collide_with_solid = function(self, pos, node, nodedef)
-				if not nodedef or not nodedef.walkable then return end
-
-				self.hit_node(self, pos, node)
-				if self.drop == true then
-					pos.y = pos.y + 1
-					self.lastpos = self.lastpos or pos
-
-					core.add_item(self.lastpos, self.object:get_luaentity().name)
-				end
-
-				mcl_util.remove_entity(self)
-			end,
-			on_collide_with_entity = function(self, pos, object)
-				if self.hit_player and object:is_player() then
-					self.hit_player(self, object)
-					mcl_util.remove_entity(self)
-					return
-				end
-
-				local entity = object:get_luaentity()
-				if not entity or entity.name == self.object:get_luaentity().name then return end
-				if self.timer < 2 and self._owner and mcl_util.get_entity_id(object) == self._owner then return end
-
-				if self.hit_mob and entity.is_mob == true then
-					self.hit_mob(self, object)
-					mcl_util.remove_entity(self)
-					return
-				elseif self.hit_object then
-					self.hit_object(self, object)
-					mcl_util.remove_entity(self)
-					return
-				end
-			end
-		}),
+		rotate = def.rotate,
 		on_punch = def.on_punch or function(self, puncher, time_from_last_punch, tool_capabilities, dir, damage)
 			local vel = self.object:get_velocity():length()
 			self.object:set_velocity(dir * vel)
-			self._owner = mcl_util.get_entity_id(puncher)
+			self._puncher = puncher
 		end,
+		collisionbox = def.collisionbox or {0, 0, 0, 0, 0, 0},
+		automatic_face_movement_dir = def.rotate
+			and (def.rotate - (math.pi / 180)) or false,
 
 		on_activate = def.on_activate,
 
 		on_step = def.on_step or function(self, dtime)
-			-- Projectile behavior processing
-			vl_projectile.update_projectile(self, dtime)
+
+			self.timer = self.timer + dtime
 
 			local pos = self.object:get_pos()
-			if not pos then return end
 
-			if self.switch == 0 or self.timer > self._lifetime or not within_limits(pos) then
+			if self.switch == 0
+			or self.timer > self._lifetime
+			or not within_limits(pos, 0) then
 				mcl_burning.extinguish(self.object)
-				mcl_util.remove_entity(self)
+				self.object:remove();
+
 				return
 			end
 
 			-- does arrow have a tail (fireball)
-			if def.tail == 1 and def.tail_texture then
-				core.add_particle({
+			if def.tail
+			and def.tail == 1
+			and def.tail_texture then
+
+				minetest.add_particle({
 					pos = pos,
 					velocity = {x = 0, y = 0, z = 0},
 					acceleration = {x = 0, y = 0, z = 0},
@@ -575,6 +415,29 @@ function mcl_mobs.register_arrow(name, def)
 					size = def.tail_size or 5,
 					glow = def.glow or 0,
 				})
+			end
+
+			if self.hit_node then
+
+				local node = node_ok(pos).name
+
+				if minetest.registered_nodes[node].walkable then
+
+					self.hit_node(self, pos, node)
+
+					if self.drop == true then
+
+						pos.y = pos.y + 1
+
+						self.lastpos = (self.lastpos or pos)
+
+						minetest.add_item(self.lastpos, self.object:get_luaentity().name)
+					end
+
+					self.object:remove();
+
+					return
+				end
 			end
 
 			if self.homing and self._target then
@@ -588,187 +451,165 @@ function mcl_mobs.register_arrow(name, def)
 				end
 			end
 
+			if self.hit_player or self.hit_mob or self.hit_object then
+
+				for _,object in pairs(minetest.get_objects_inside_radius(pos, 1.5)) do
+
+					if self.hit_player
+					and object:is_player() then
+
+						self.hit_player(self, object)
+						self.object:remove();
+						return
+					end
+
+					local entity = object:get_luaentity()
+
+					if entity
+					and self.hit_mob
+					and entity.is_mob == true
+					and (tostring(object) ~= self.owner_id or self.timer > 2)
+					and entity.name ~= self.object:get_luaentity().name then
+						self.hit_mob(self, object)
+						self.object:remove();
+						return
+					end
+
+					if entity
+					and self.hit_object
+					and (not entity.is_mob)
+					and (tostring(object) ~= self.owner_id or self.timer > 2)
+					and entity.name ~= self.object:get_luaentity().name then
+						self.hit_object(self, object)
+						self.object:remove();
+						return
+					end
+				end
+			end
+
 			self.lastpos = pos
 		end
 	})
 end
 
----@param spawner vector.Vector
----@param player  core.ObjectRef
----@param eggs    core.ItemStack
----@return core.ItemStack egg
-local function configure_spawner_with_egg(spawner, player, eggs)
-	local playername = player:get_player_name()
-	local privs = core.get_player_privs(playername)
-	local mobname = eggs:get_name()
+-- Register spawn eggs
 
-	if core.is_protected(spawner, playername) then
-		core.record_protection_violation(spawner, playername)
-		return eggs
-	end
-	if not privs.maphack then
-		core.chat_send_player(playername, S("You need the “maphack” privilege to change the mob spawner."))
-		return eggs
+-- Note: This also introduces the “spawn_egg” group:
+-- * spawn_egg=1: Spawn egg (generic mob, no metadata)
+-- * spawn_egg=2: Spawn egg (captured/tamed mob, metadata)
+function mcl_mobs.register_egg(mob, desc, background_color, overlay_color, addegg, no_creative)
+
+	local grp = {spawn_egg = 1}
+
+	-- do NOT add this egg to creative inventory (e.g. dungeon master)
+	if no_creative == true then
+		grp.not_in_creative_inventory = 1
 	end
 
-	-- mob conversion may be required for some eggs
-	local convertto = (core.registered_entities[mobname] or {})._convert_to
-	if convertto then
-		mobname = convertto
-	end
-
-	local dim = mcl_worlds.pos_to_dimension(player:get_pos())
-	local minlight = mcl_mobs:mob_light_lvl(mobname, dim)
-	mcl_mobspawners.setup_spawner(spawner, mobname, minlight)
-
-	if not core.is_creative_enabled(playername) then
-		eggs:take_item()
-	end
-	return eggs
-end
-
----@param eggs core.ItemStack
----@param placer core.ObjectRef
----@param pointed_thing core.PointedThing
----@return core.ItemStack eggs
-local function on_place_egg(eggs, placer, pointed_thing)
-	local playername = placer:get_player_name()
-	local mobname = eggs:get_name()
-
-	-- if the player is right-clicking something with an on_rightclick function,
-	-- they should interact with that thing instead
-	local itemstack, called = mcl_util.handle_node_rightclick(eggs, placer,
-			pointed_thing)
-	if called then
-		return itemstack
-	end
-
-	-- the player shouldn't be able to place mobs outside of map bounds
-	-- or protected regions
-	local pos = pointed_thing.above
-	if not pos or not within_limits(pos, 0) then
-		return eggs
-	end
-	if core.is_protected(pos, playername) then
-		core.record_protection_violation(pos, playername)
-		return eggs
-	end
-
-	-- the mob needs to be placed in a transparent block
-	-- so it can't be placed inside of a block while noclipping
-	local node = core.get_node(pos)
-	local nodedef = core.registered_nodes[node.name]
-	if nodedef and nodedef.groups and nodedef.groups.opaque
-			and not nodedef.groups.not_opaque then
-		return eggs
-	end
-
-	-- players can configure mob spawners by right clicking them
-	-- with eggs
-	if pointed_thing
-			and pointed_thing.under
-			and core.get_node(pointed_thing.under).name == "mcl_mobspawners:spawner" then
-		return configure_spawner_with_egg(pointed_thing.under, placer, eggs)
-	end
-
-	-- invalid egg?
-	if not core.registered_entities[mobname] then
-		core.log("warning", "egg corresponds to non-existing entity: "
-				.. tostring(mobname))
-		return eggs
-	end
-
-	-- shouldn't allow monsters to be spawned in peaceful mode
-	if core.settings:get_bool("only_peaceful_mobs", false)
-			and core.registered_entities[mobname].type == "monster" then
-		core.chat_send_player(playername, S("Only peaceful mobs allowed!"))
-		return eggs
-	end
-
-	local pos_str = core.pos_to_string(pos)
-	local mob = mcl_mobs.spawn(pos, mobname, {force = true})
-	if not mob then
-		core.log("verbose", string.format(
-				"placing mob egg (mob %s) at pos %s: room check did not pass",
-				mobname, pos_str))
-		return eggs
-	end
-
-	core.log("action", string.format("player %s spawned %s at %s", playername,
-			mobname, pos_str))
-
-	-- if a player spawns a friendly tameable mob without sneaking
-	-- then they should spawn in already tamed to that player
-	local ent = mob:get_luaentity()
-	if ent.type ~= "monster" and not placer:get_player_control().sneak then
-		ent.owner = placer:get_player_name()
-		ent.tamed = true
-	end
-
-	-- eggs can be named and the name should be transferred onto the mobs
-	-- that they spawn
-	local nametag = eggs:get_meta():get_string("name")
-	if nametag ~= "" then
-		if string.len(nametag) > MAX_MOB_NAME_LENGTH then
-			nametag = string.sub(nametag, 1, MAX_MOB_NAME_LENGTH)
-		end
-		ent.nametag = nametag
-		ent:update_tag()
-	end
-
-	-- items should only be taken if the player isn't in creative mode
-	if not core.is_creative_enabled(placer:get_player_name()) then
-		eggs:take_item()
-	end
-
-	return eggs
-end
-
---- Register spawn eggs
----
---- Note: This also introduces the “spawn_egg” group:
---- * spawn_egg=1: Spawn egg (generic mob, no metadata)
---- * spawn_egg=2: Spawn egg (captured/tamed mob, metadata)
----
----@param mob_id           string	Egg mob ID
----@param desc             string	Egg description
----@param background_color string	Egg item background color
----@param overlay_color    string	Egg item overlay color
----@param addegg           number?
----@param no_creative      boolean? If true, the egg item will not appear in the creative inventory.
-function mcl_mobs.register_egg(mob_id, desc, background_color, overlay_color, addegg, no_creative)
-	local group = { spawn_egg = 1 }
-
-	if no_creative then
-		group.not_in_creative_inventory = 1
-	end
-
-	local invimg = table.concat({
-		"(spawn_egg.png^[multiply:", background_color,
-		")^(spawn_egg_overlay.png^[multiply:", overlay_color, ")"
-	})
+	local invimg = "(spawn_egg.png^[multiply:" .. background_color ..")^(spawn_egg_overlay.png^[multiply:" .. overlay_color .. ")"
 	if old_spawn_icons then
-		local mob_name     = mob_id:gsub("mobs_mc:", "")
-		local mod_path     = core.get_modpath("mobs_mc")
-		local icon_name    = string.format("mobs_mc_spawn_icon_%s.png", mob_name)
-		local texture_path = string.format("%s/textures/%s", mod_path, icon_name)
-		if mcl_util.file_exists(texture_path) then
-			invimg = icon_name
+		local mobname = mob:gsub("mobs_mc:","")
+		local fn = "mobs_mc_spawn_icon_"..mobname..".png"
+		if mcl_util.file_exists(minetest.get_modpath("mobs_mc").."/textures/"..fn) then
+			invimg = fn
 		end
 	end
 	if addegg == 1 then
-		invimg = "mobs_chicken_egg.png^(" .. invimg
-				.. "^[mask:mobs_chicken_egg_overlay.png)"
+		invimg = "mobs_chicken_egg.png^(" .. invimg ..
+			"^[mask:mobs_chicken_egg_overlay.png)"
 	end
 
-	core.register_craftitem(mob_id, {
-		description     = desc,
-		inventory_image = invimg,
-		groups          = group,
+	-- register old stackable mob egg
+	minetest.register_craftitem(mob, {
 
-		_doc_items_longdesc  = S("This allows you to place a single mob."),
+		description = desc,
+		inventory_image = invimg,
+		groups = grp,
+
+		_doc_items_longdesc = S("This allows you to place a single mob."),
 		_doc_items_usagehelp = S("Just place it where you want the mob to appear. Animals will spawn tamed, unless you hold down the sneak key while placing. If you place this on a mob spawner, you change the mob it spawns."),
 
-		on_place = on_place_egg,
+		on_place = function(itemstack, placer, pointed_thing)
+
+			local pos = pointed_thing.above
+
+			-- am I clicking on something with existing on_rightclick function?
+			local under = minetest.get_node(pointed_thing.under)
+			local def = minetest.registered_nodes[under.name]
+			if def and def.on_rightclick then
+				return def.on_rightclick(pointed_thing.under, under, placer, itemstack)
+			end
+
+			if pos and within_limits(pos, 0)  and not minetest.is_protected(pos, placer:get_player_name()) then
+				local name = placer:get_player_name()
+				local privs = minetest.get_player_privs(name)
+
+
+				if under.name == "mcl_mobspawners:spawner" then
+					if minetest.is_protected(pointed_thing.under, name) then
+						minetest.record_protection_violation(pointed_thing.under, name)
+						return itemstack
+					end
+					if not privs.maphack then
+						minetest.chat_send_player(name, S("You need the “maphack” privilege to change the mob spawner."))
+						return itemstack
+					end
+
+					local dim = mcl_worlds.pos_to_dimension(placer:get_pos())
+					local mob_light_lvl = {mcl_mobs:mob_light_lvl(itemstack:get_name(),dim)}
+
+					--minetest.log("min light: " .. mob_light_lvl[1])
+					--minetest.log("max light: " .. mob_light_lvl[2])
+
+					mcl_mobspawners.setup_spawner(pointed_thing.under, itemstack:get_name(), mob_light_lvl[1], mob_light_lvl[2])
+					if not minetest.is_creative_enabled(name) then
+						itemstack:take_item()
+					end
+					return itemstack
+				end
+
+				if not minetest.registered_entities[mob] then
+					return itemstack
+				end
+
+				if minetest.settings:get_bool("only_peaceful_mobs", false)
+						and minetest.registered_entities[mob].type == "monster" then
+					minetest.chat_send_player(name, S("Only peaceful mobs allowed!"))
+					return itemstack
+				end
+
+				pos.y = pos.y - 0.5
+
+				local mob = minetest.add_entity(pos, mob)
+				local entityname = itemstack:get_name()
+				minetest.log("action", "Player " ..name.." spawned "..entityname.." at "..minetest.pos_to_string(pos))
+				local ent = mob:get_luaentity()
+
+				-- don't set owner if monster or sneak pressed
+				if ent.type ~= "monster"
+				and not placer:get_player_control().sneak then
+					ent.owner = placer:get_player_name()
+					ent.tamed = true
+				end
+
+				-- set nametag
+				local nametag = itemstack:get_meta():get_string("name")
+				if nametag ~= "" then
+					if string.len(nametag) > MAX_MOB_NAME_LENGTH then
+						nametag = string.sub(nametag, 1, MAX_MOB_NAME_LENGTH)
+					end
+					ent.nametag = nametag
+					ent:update_tag()
+				end
+
+				-- if not in creative then take item
+				if not minetest.is_creative_enabled(placer:get_player_name()) then
+					itemstack:take_item()
+				end
+			end
+
+			return itemstack
+		end,
 	})
+
 end

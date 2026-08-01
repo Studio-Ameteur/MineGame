@@ -450,19 +450,19 @@ if minetest.settings:get_bool("mcl_generate_ores", true) then
 		ore_type       = "scatter",
 		ore            = "mcl_nether:ancient_debris",
 		wherein         = ancient_debris_wherein,
-		clust_scarcity = 12000, -- MC would be 25000, MCLA uses 15000, needs balancing
+		clust_scarcity = 25000, -- 0.004% chance
 		clust_num_ores = 3,
 		clust_size     = 3,
 		y_min = mcl_vars.mg_nether_min + 8,
 		y_max = mcl_vars.mg_nether_min + 22,
 	})
 
-	-- Rare spawn (below)
+		-- Rare spawn (below)
 	minetest.register_ore({
 		ore_type       = "scatter",
 		ore            = "mcl_nether:ancient_debris",
 		wherein         = ancient_debris_wherein,
-		clust_scarcity = 20000,
+		clust_scarcity = 32000,
 		clust_num_ores = 2,
 		clust_size     = 3,
 		y_min = mcl_vars.mg_nether_min,
@@ -474,7 +474,7 @@ if minetest.settings:get_bool("mcl_generate_ores", true) then
 		ore_type       = "scatter",
 		ore            = "mcl_nether:ancient_debris",
 		wherein         = ancient_debris_wherein,
-		clust_scarcity = 20000,
+		clust_scarcity = 32000,
 		clust_num_ores = 2,
 		clust_size     = 3,
 		y_min = mcl_vars.mg_nether_min + 22,
@@ -528,6 +528,37 @@ if minetest.settings:get_bool("mcl_generate_ores", true) then
 		y_min          = mcl_worlds.layer_to_y(13),
 		y_max          = mcl_worlds.layer_to_y(15),
 	})
+
+	--
+	-- Emerald
+	--
+
+	if mg_name == "v6" then
+		-- Generate everywhere in v6, but rarely.
+
+		-- Common spawn
+		minetest.register_ore({
+			ore_type       = "scatter",
+			ore            = "mcl_core:stone_with_emerald",
+			wherein        = stonelike,
+			clust_scarcity = 14340,
+			clust_num_ores = 1,
+			clust_size     = 1,
+			y_min          = mcl_vars.mg_overworld_min,
+			y_max          = mcl_worlds.layer_to_y(29),
+		})
+		-- Rare spawn
+		minetest.register_ore({
+			ore_type       = "scatter",
+			ore            = "mcl_core:stone_with_emerald",
+			wherein        = stonelike,
+			clust_scarcity = 21510,
+			clust_num_ores = 1,
+			clust_size     = 1,
+			y_min          = mcl_worlds.layer_to_y(30),
+			y_max          = mcl_worlds.layer_to_y(32),
+		})
+	end
 
 	--
 	-- Lapis Lazuli
@@ -642,6 +673,7 @@ if minetest.settings:get_bool("mcl_generate_ores", true) then
 	if minetest.settings:get_bool("mcl_generate_deepslate", true) then
 			local stonelike = { "mcl_core:stone", "mcl_core:diorite", "mcl_core:andesite", "mcl_core:granite" }
 		local function register_ore_mg(ore, scarcity, num, size, y_min, y_max, biomes)
+			biomes = biomes or ""
 			minetest.register_ore({
 				ore_type       = "scatter",
 				ore            = ore,
@@ -651,7 +683,7 @@ if minetest.settings:get_bool("mcl_generate_ores", true) then
 				clust_size     = size,
 				y_min          = y_min,
 				y_max          = y_max,
-				biomes         = biomes,
+				biomes		   = biomes,
 			})
 		end
 		local ore_mapgen = {
@@ -679,7 +711,11 @@ if minetest.settings:get_bool("mcl_generate_ores", true) then
 		for _, o in pairs(ore_mapgen) do
 			register_ore_mg("mcl_deepslate:deepslate_with_"..o[1], o[2], o[3], o[4], o[5], o[6])
 		end
-		register_ore_mg("mcl_deepslate:deepslate_with_emerald", 16384, 1, 1, mcl_worlds.layer_to_y(4), deepslate_max, mountains)
+		if minetest.get_mapgen_setting("mg_name") == "v6" then
+			register_ore_mg("mcl_deepslate:deepslate_with_emerald", 14340, 1, 1, deepslate_min, deepslate_max)
+		else
+			register_ore_mg("mcl_deepslate:deepslate_with_emerald", 16384, 1, 1, mcl_worlds.layer_to_y(4), deepslate_max, mountains)
+		end
 		if copper_mod then
 			register_ore_mg("mcl_deepslate:deepslate_with_copper", 830, 5, 3, deepslate_min, deepslate_max)
 			minetest.register_ore({

@@ -20,12 +20,23 @@ dofile(minetest.get_modpath(minetest.get_current_modname()).."/snippets.lua")
 -- Apply item description updates
 
 local function apply_snippets(desc, itemstring, toolcaps, itemstack)
+	local first = true
 	-- Apply snippets
 	for s=1, #tt.registered_snippets do
 		local str, snippet_color = tt.registered_snippets[s](itemstring, toolcaps, itemstack)
+		if snippet_color == nil then
+			snippet_color = tt.COLOR_DEFAULT
+		end
 		if str then
-			if snippet_color == nil then snippet_color = tt.COLOR_DEFAULT end
-			desc = desc .. "\n" .. (snippet_color and minetest.colorize(snippet_color, str) or str)
+			if first then
+				first = false
+			end
+			desc = desc .. "\n"
+			if snippet_color then
+				desc = desc .. minetest.colorize(snippet_color, str)
+			else
+				desc = desc .. str
+			end
 		end
 	end
 	return desc
@@ -56,7 +67,10 @@ function tt.reload_itemstack_description(itemstack)
 	if def and def._mcl_generate_description then
 		def._mcl_generate_description(itemstack)
 	elseif should_change(itemstring, def) then
-		local toolcaps = def.tool_capabilities and itemstack:get_tool_capabilities()
+		local toolcaps
+		if def.tool_capabilities then
+			toolcaps = itemstack:get_tool_capabilities()
+		end
 		local orig_desc = def._tt_original_description or def.description
 		if meta:get_string("name") ~= "" then
 			orig_desc = minetest.colorize(tt.NAME_COLOR, meta:get_string("name"))
@@ -64,13 +78,17 @@ function tt.reload_itemstack_description(itemstack)
 			local potency = meta:get_int("mcl_potions:potion_potent")
 			local plus = meta:get_int("mcl_potions:potion_plus")
 			if potency > 0 then
-				orig_desc = orig_desc .. " " .. mcl_util.to_roman(potency+1)
+				local sym_potency = mcl_util.to_roman(potency+1)
+				orig_desc = orig_desc.. " ".. sym_potency
 			end
 			if plus > 0 then
-				orig_desc = orig_desc .. " "
-				for i = 1, plus do
-					orig_desc = orig_desc .. "+"
+				local sym_plus = " "
+				local i = plus
+				while i>0 do
+					i = i - 1
+					sym_plus = sym_plus.. "+"
 				end
+				orig_desc = orig_desc.. sym_plus
 			end
 		end
 		local desc = apply_snippets(orig_desc, itemstring, toolcaps or def.tool_capabilities, itemstack)
@@ -78,6 +96,3 @@ function tt.reload_itemstack_description(itemstack)
 		meta:set_string("description", desc)
 	end
 end
-
-core.register_craft_predict(tt.reload_itemstack_description)
-core.register_on_craft(tt.reload_itemstack_description)

@@ -3,7 +3,7 @@ Mobs Redo: VoxeLibre Edition
 API documentation
 ==============================
 
-Welcome to the world of mobs in Luanti and hopefully an easy guide to defining
+Welcome to the world of mobs in Minetest and hopefully an easy guide to defining
 your own mobs and having them appear in your worlds.
 
 
@@ -28,10 +28,9 @@ functions needed for the mob to work properly which contains the following:
 	"monster"		attacks player or npc on sight.
 	"npc"			walk around and will defend themselves if hit first, they
 					kill monsters.
-	'initial_properties'	Initial entity properties. Has these fields:
-		'hp_min'		the minimum health value the mob can spawn with.
-		'hp_max'		the maximum health value the mob can spawn with.
-		'breath_max'	The maximum breath value the mob can spawn with and can have.
+	'hp_min'		the minimum health value the mob can spawn with.
+	'hp_max'		the maximum health value the mob can spawn with.
+	'breath_max'	The maximum breath value the mob can spawn with and can have.
 					If -1 (default), mob does not take drowning damage.
 	'breathes_in_water' If true, mob loses breath when not in water. Otherwise,
 					mob loses breath when inside a node with `drowning` attribute
@@ -162,16 +161,10 @@ functions needed for the mob to work properly which contains the following:
 	The pitch of children is 50% higher.
 
 	'drops'	 table of items that are dropped when mob is killed, fields are:
-		'name'	      name of item to drop.
-		'chance'      chance of drop, 1 for always, 2 for 1-in-2 chance etc., defaults to 1
-		'min'	      minimum number of items dropped, defaults to 1
-		'max'	      maximum number of items dropped, defaults to drop.min
-		'looting'      controls player-kill and looting behaviour. Options:
-			- "common" (default): allowed on non-player deaths; looting increases quantity.
-			- "rare": disallowed on non-player deaths; looting increases chance.
-		'conditions'  table of conditions that may affect the drop, fields are:
-			'guarantee_if_killed_by'  list of mob ids. if any of the mobs in this list killed this mob
-			                          then the drop is guaranteed
+	'name'	name of item to drop.
+	'chance' chance of drop, 1 for always, 2 for 1-in-2 chance etc.
+	'min'	minimum number of items dropped.
+	'max'	maximum number of items dropped.
 
 	'visual'			holds the look of the mob you wish to create:
 	'cube'				looks like a normal node
@@ -272,9 +265,6 @@ functions needed for the mob to work properly which contains the following:
     'attack_frequency'  Attack frequency in seconds. If unset, this defaults to 1. Implemented for melee only atm.
 
 	mobs:gopath(self,target,callback_arrived)		pathfind a way to target and run callback on arrival
-	'_vl_projectile'	Table with Projectile API behaviors. Current members are:
-		'can_punch(self, projectile_luaentity)'	return 'false' from this function to prevent the provided projectile
-										from colliding with the mob
 
 
 
@@ -384,13 +374,6 @@ for each mob.
 								(for swimming mobs that have stranded)
 						"die": during death
 	'self.nametag'		contains the name of the mob which it can show above
-	'self.force_attack' set to true to forcefully enable attack AI if its disabled
-						through game settings
-
-VoxeLibre extensions
-------------------
-
-	'self.attack' the object that is currently being attacked by this mob
 
 
 Spawning Mobs in World
@@ -501,8 +484,6 @@ This function registers a arrow for mobs with the attack type shoot.
 		'rotate'		integer value in degrees to rotate arrow
 		'on_step'	is a custom function when arrow is active, nil for
 					default.
-		'_vl_projectile'	table with Projectile API properties. Refer to mods/ITEMS/vl_projectile/api.md
-						for documentation.
 
 
 Spawn Eggs
@@ -524,31 +505,14 @@ This function registers a spawn egg which can be used by admin to properly spawn
 Explosion Function
 ------------------
 
-mobs:boom(self, pos, radius, info_overrides, preserve_self)
-    'self'              mob entity
-    'pos'               centre position of explosion
-    'radius'            blast radius of explosion (typically set to 3)
-    'info_overrides'	is a table of parametric information to override the
-                        default values passed to the explosions API
-    'preserve_self'		will prevent the mob entity from deleting itself after
-                        the explosion (default is false)
+mobs:boom(self, pos, radius)
+	'self' mob entity
+	'pos' centre position of explosion
+	'radius' radius of explosion (typically set to 3)
 
-This function generates an explosion that:
-    1. Damages any entity caught inside the blast radius;
-    2. Will remove nodes in the blast radius if:
-        a. Mob griefing is enabled or 'info_overrides.griefing == true', and;
-        b. The nodes are not protected, or;
-        c. The nodes are protected and 'info_overrides.grief_protected == true'.
-        
-The mob will then delete itself unless 'preserve_self' is passed.
-
-The default 'info' values passed to the Explosions API are:
-{ 
-    drop_chance = 1.0, 
-    griefing = mobs_griefing == true,
-    grief_protected = false 
-}
-See mcl_explosion.explode for a list of parameters that can be overriden.
+This function generates an explosion which removes nodes in a specific radius
+and damages any entity caught inside the blast radius.Protection will limit
+node destruction but not entity damage.
 
 
 mobs:capture_mob
@@ -706,13 +670,6 @@ mob will spawn e.g.
 
 mobs_animal:sheep_chance 11000
 mobs_monster:sand_monster_chance 100
-
-Registering Mob Conversion
-----------------
-
-Sometimes you need to completely replace one mob with a different version. To do this, use:
-
-	mcl_mobs.register_conversion(old_name, new_name)
 
 
 Rideable Horse Example Mob

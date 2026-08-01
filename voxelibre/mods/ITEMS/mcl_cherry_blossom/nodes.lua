@@ -51,28 +51,25 @@ mcl_stairs.register_stair("cherrywood", "mcl_cherry_blossom:cherrywood",
 		{handy=1,axey=1, flammable=3,wood_stairs=1, material_wood=1, fire_encouragement=5, fire_flammability=20},
 		{"mcl_cherry_blossom_planks.png"},
 		S("Cherry Stairs"),
-		mcl_sounds.node_sound_wood_defaults(), nil, nil,
+		mcl_sounds.node_sound_wood_defaults(), 3, 2,
 		"woodlike")
 mcl_stairs.register_slab("cherrywood", "mcl_cherry_blossom:cherrywood",
 		{handy=1,axey=1, flammable=3,wood_slab=1, material_wood=1, fire_encouragement=5, fire_flammability=20},
 		{"mcl_cherry_blossom_planks.png"},
 		S("Cherry Slab"),
-		mcl_sounds.node_sound_wood_defaults(), nil, nil,
+		mcl_sounds.node_sound_wood_defaults(), 3, 2,
 		S("Double Cherry Slab"))
 
 -- Signs
-mcl_signs.register_sign("cherry", "", {
-	description = S("Cherry Sign"),
-	tiles = {"mcl_cherry_blossom_sign.png"},
-	inventory_image = "mcl_cherry_blossom_sign_inv.png",
-	wield_image = "mcl_cherry_blossom_sign_inv.png",
-})
+mcl_signs.register_sign_custom("mcl_cherry_blossom", "_cherrywood",
+		"mcl_cherry_blossom_sign.png", nil,
+		"mcl_cherry_blossom_sign_inv.png", "mcl_cherry_blossom_sign_inv.png", S("Cherry Sign"))
 
 -- Fences & Gates
 mcl_fences.register_fence_and_fence_gate(
 	"cherry_fence",
 	S("Cherry Fence"),
-	S("Cherry Fence Gate"),
+	S("Cherry Gate"),
 	"mcl_cherry_blossom_planks.png",
 	{handy=1, axey=1, flammable=2, fence_wood=1, fire_encouragement=5, fire_flammability=20},
 	minetest.registered_nodes["mcl_core:wood"]._mcl_hardness,

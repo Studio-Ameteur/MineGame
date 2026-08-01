@@ -272,9 +272,6 @@ function mesecon.is_conductor_on(node, rulename)
 	local conductor = mesecon.get_conductor(node.name)
 	if conductor then
 		if conductor.state then
-			if type(conductor.state) == "function" then
-				return conductor.state(node) == mesecon.state.on
-			end
 			return conductor.state == mesecon.state.on
 		end
 		if conductor.states then
@@ -296,9 +293,6 @@ function mesecon.is_conductor_off(node, rulename)
 	local conductor = mesecon.get_conductor(node.name)
 	if conductor then
 		if conductor.state then
-			if type(conductor.state) == "function" then
-				return conductor.state(node) == mesecon.state.off
-			end
 			return conductor.state == mesecon.state.off
 		end
 		if conductor.states then
@@ -408,15 +402,7 @@ function mesecon.turnon(pos, link)
 				end
 			end
 
-			local conductor_on_state = mesecon.get_conductor_on(node, f.link)
-			if type(conductor_on_state) == "function" then
-				conductor_on_state = conductor_on_state(f.pos, node)
-			end
-			if type(conductor_on_state) == "table" then
-				mesecon.swap_node_force(f.pos, conductor_on_state[1], conductor_on_state[2])
-			else
-				mesecon.swap_node_force(f.pos, conductor_on_state)
-			end
+			mesecon.swap_node_force(f.pos, mesecon.get_conductor_on(node, f.link))
 		elseif mesecon.is_effector(node.name) then
 			mesecon.changesignal(f.pos, node, f.link, mesecon.state.on, depth)
 			if mesecon.is_effector_off(node.name) then
@@ -485,15 +471,7 @@ function mesecon.turnoff(pos, link)
 				end
 			end
 
-			local conductor_off_state = mesecon.get_conductor_off(node, f.link)
-			if type(conductor_off_state) == "function" then
-				conductor_off_state = conductor_off_state(f.pos, node)
-			end
-			if type(conductor_off_state) == "table" then
-				mesecon.swap_node_force(f.pos, conductor_off_state[1], conductor_off_state[2])
-			else
-				mesecon.swap_node_force(f.pos, conductor_off_state)
-			end
+			mesecon.swap_node_force(f.pos, mesecon.get_conductor_off(node, f.link))
 		elseif mesecon.is_effector(node.name) then
 			insert(signals, {
 				pos = f.pos,

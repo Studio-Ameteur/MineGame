@@ -235,11 +235,11 @@ minetest.register_node("mcl_enchanting:table", {
 	_doc_items_hidden = false,
 	drawtype = "nodebox",
 	tiles = {"mcl_enchanting_table_top.png",  "mcl_enchanting_table_bottom.png", "mcl_enchanting_table_side.png", "mcl_enchanting_table_side.png", "mcl_enchanting_table_side.png", "mcl_enchanting_table_side.png"},
+	use_texture_alpha = minetest.features.use_texture_alpha_string_modes and "opaque" or false,
 	node_box = {
 		type = "fixed",
 		fixed = {-0.5, -0.5, -0.5, 0.5, 0.25, 0.5},
 	},
-	use_texture_alpha = "clip",
 	sounds = mcl_sounds.node_sound_stone_defaults(),
 	groups = {pickaxey = 2, deco_block = 1},
 	on_rotate = rotate,

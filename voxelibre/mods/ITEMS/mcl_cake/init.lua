@@ -37,6 +37,7 @@ minetest.register_node("mcl_cake:cake", {
 	_doc_items_longdesc = S("Cakes can be placed and eaten to restore hunger points. A cake has 7 slices. Each slice restores 2 hunger points and 0.4 saturation points. Cakes will be destroyed when dug or when the block below them is broken."),
 	_doc_items_usagehelp = S("Place the cake anywhere, then rightclick it to eat a single slice. You can't eat from the cake when your hunger bar is full."),
 	tiles = {"cake_top.png","cake_bottom.png","cake_side.png","cake_side.png","cake_side.png","cake_side.png"},
+	use_texture_alpha = minetest.features.use_texture_alpha_string_modes and "opaque" or false,
 	inventory_image = "cake.png",
 	wield_image = "cake.png",
 	paramtype = "light",
@@ -50,7 +51,6 @@ minetest.register_node("mcl_cake:cake", {
 		type = "fixed",
 		fixed = full_cake
 	},
-	use_texture_alpha = "clip",
 	stack_max = 1,
 	groups = {
 		handy = 1, attached_node = 1, dig_by_piston = 1, comparator_signal = 14,
@@ -116,6 +116,7 @@ local register_slice = function(level, nodebox, desc)
 		description = desc,
 		_doc_items_create_entry = false,
 		tiles = cake_texture,
+		use_texture_alpha = minetest.features.use_texture_alpha_string_modes and "opaque" or false,
 		paramtype = "light",
 		is_ground_content = false,
 		drawtype = "nodebox",
@@ -126,8 +127,7 @@ local register_slice = function(level, nodebox, desc)
 		node_box = {
 			type = "fixed",
 			fixed = nodebox,
-		},
-		use_texture_alpha = "clip",
+			},
 		groups = {
 			handy = 1, attached_node = 1, not_in_creative_inventory = 1,
 			dig_by_piston = 1, cake = level, comparator_signal = level * 2,

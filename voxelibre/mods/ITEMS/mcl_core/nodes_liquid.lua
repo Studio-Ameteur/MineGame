@@ -9,46 +9,11 @@ local math = math
 local WATER_VISC = 1
 local LAVA_VISC = 7
 local LIGHT_LAVA = minetest.LIGHT_MAX
+local USE_TEXTURE_ALPHA = true
 
-
---- Extension of core.NodeDef.
---- 
---- @class (partial) core.NodeDef
---- 
---- A function that extinguishes a node.
---- 
---- Parameters:
----     nodepos:         Position of the node being extinguished
----     extinguisherpos: Position of the node causing the extinguishing (optional)
---- 
---- Returns: true if it was extinguished.
---- @field _mcl_extinguish_fn? fun(nodepos: Vector, extinguisherpos: Vector?): boolean)
---- 
---- A function that is called whenever a liquid node is transformed.
---- 
---- Parameters:
----     nodepos: Position of the liquid node that was transformed
---- @field _mcl_on_liquid_transform fun(nodepos: Vector)?
-
-
---- Extinguishes the node at the specified position.
---- 
---- @param pos       Vector Position of node being extinguished
---- @param liquidpos Vector Position of the liquid node doing the extinguishing
---- @return boolean extinguished True if node was extinguished
-local function extinguish(pos, liquidpos)
-	local node = core.get_node(pos)
-	local nodedef = core.registered_nodes[node.name]
-	if not nodedef then
-		return false
-	end
-	local fn = nodedef._mcl_extinguish_fn
-	if type(fn) == "function" then
-		return fn(pos, liquidpos)
-	end
-	return false
+if minetest.features.use_texture_alpha_string_modes then
+	USE_TEXTURE_ALPHA = "blend"
 end
-
 
 minetest.register_node("mcl_core:water_flowing", {
 	description = S("Flowing Water"),
@@ -58,12 +23,12 @@ minetest.register_node("mcl_core:water_flowing", {
 	tiles = {"mcl_core_water_flow_animation.png^[verticalframe:64:0"},
 	special_tiles = {
 		{
-			name="mcl_core_water_flow_animation.png",
+			image="mcl_core_water_flow_animation.png",
 			backface_culling=false,
 			animation={type="vertical_frames", aspect_w=16, aspect_h=16, length=1.5}
 		},
 		{
-			name="mcl_core_water_flow_animation.png",
+			image="mcl_core_water_flow_animation.png",
 			backface_culling=false,
 			animation={type="vertical_frames", aspect_w=16, aspect_h=16, length=1.5}
 		},
@@ -71,7 +36,7 @@ minetest.register_node("mcl_core:water_flowing", {
 	color = "#3F76E4",
 	sounds = mcl_sounds.node_sound_water_defaults(),
 	is_ground_content = false,
-	use_texture_alpha = "blend",
+	use_texture_alpha = USE_TEXTURE_ALPHA,
 	paramtype = "light",
 	paramtype2 = "flowingliquid",
 	walkable = false,
@@ -91,16 +56,6 @@ minetest.register_node("mcl_core:water_flowing", {
 	_mcl_blast_resistance = 100,
 	-- Hardness intentionally set to infinite instead of 100 (Minecraft value) to avoid problems in creative mode
 	_mcl_hardness = -1,
-	on_construct = function(pos)
-		-- Flowing water nodes should extinguish any blocks below it
-		-- when they are created
-		extinguish(vector.offset(pos, 0, -1, 0), pos)
-	end,
-	_mcl_on_liquid_transform = function(pos)
-		-- Flowing water nodes should extinguish any blocks below it
-		-- when they are created
-		extinguish(vector.offset(pos, 0, -1, 0), pos)
-	end
 })
 
 minetest.register_node("mcl_core:water_source", {
@@ -129,7 +84,7 @@ S("• When water is directly below lava, the water turns into stone."),
 	color = "#3F76E4",
 	sounds = mcl_sounds.node_sound_water_defaults(),
 	is_ground_content = false,
-	use_texture_alpha = "blend",
+	use_texture_alpha = USE_TEXTURE_ALPHA,
 	paramtype = "light",
 	paramtype2 = "color",
 	palette = "mcl_core_palette_water.png",
@@ -153,20 +108,11 @@ S("• When water is directly below lava, the water turns into stone."),
 	on_construct = function(pos)
 		local node = minetest.get_node(pos)
 		if node.param2 == 0 then
-			local p2 = mcl_util.get_palette_indexes_from_pos(pos).water_palette_index
-			if node.param2 ~= p2 then
-				node.param2 = p2
-				minetest.swap_node(pos, node)
+			local new_node = mcl_core.get_water_block_type(pos)
+			if new_node.param2 ~= 0 then
+				minetest.swap_node(pos, new_node)
 			end
 		end
-		-- Water source nodes should extinguish any blocks below it
-		-- when they are created
-		extinguish(vector.offset(pos, 0, -1, 0), pos)
-	end,
-	_mcl_on_liquid_transform = function(pos)
-		-- Flowing water nodes should extinguish any blocks below it
-		-- when they are created
-		extinguish(vector.offset(pos, 0, -1, 0), pos)
 	end,
 })
 
@@ -178,12 +124,12 @@ minetest.register_node("mcl_core:lava_flowing", {
 	tiles = {"mcl_core_lava_flow_animation.png^[verticalframe:64:0"},
 	special_tiles = {
 		{
-			name="mcl_core_lava_flow_animation.png",
+			image="mcl_core_lava_flow_animation.png",
 			backface_culling=false,
 			animation={type="vertical_frames", aspect_w=16, aspect_h=16, length=6.6}
 		},
 		{
-			name="mcl_core_lava_flow_animation.png",
+			image="mcl_core_lava_flow_animation.png",
 			backface_culling=false,
 			animation={type="vertical_frames", aspect_w=16, aspect_h=16, length=6.6}
 		},
@@ -199,7 +145,7 @@ minetest.register_node("mcl_core:lava_flowing", {
 	buildable_to = true,
 	drop = "",
 	--[[ Drowning in Minecraft deals 2 damage per second.
-	In Luanti, drowning damage is dealt every 2 seconds so this
+	In Minetest, drowning damage is dealt every 2 seconds so this
 	translates to 4 drowning damage ]]
 	drowning = 4,
 	liquidtype = "flowing",
@@ -226,7 +172,7 @@ end
 
 minetest.register_node("mcl_core:lava_source", {
 	description = S("Lava Source"),
-	_doc_items_entry_name = S("Lava"),
+	_doc_items_entry_name = "Lava",
 	_doc_items_longdesc =
 S("Lava is hot and rather dangerous. Don't touch it, it will hurt you a lot and it is hard to get out.").."\n"..
 fire_text.."\n\n"..
@@ -313,43 +259,21 @@ if minetest.settings:get("mcl_node_particles") == "full" then
 	})
 end
 
-
----@param fwpos Vector
-local function adjust_water_palette(fwpos)
-	local pos1  = vector.offset(fwpos, -1, -1, -1)
-	local pos2  = vector.offset(fwpos, 1, 1, 1)
-	local water = core.find_nodes_in_area(pos1, pos2, { "group:water_palette" })
-	for _, wpos in pairs(water) do
-		local wnode = core.get_node(wpos)
-		local palette_index = mcl_util.get_palette_indexes_from_pos(wpos).water_palette_index
-		if wnode.param2 ~= palette_index then
-			wnode.param2 = palette_index
-			core.set_node(wpos, wnode)
-	    end
-	end
-end
-
-
---- Individual callback for core.register_on_liquid_transformed
---- 
---- @param fwpos Vector
-local function on_liquid_transformed(fwpos)
-	local fwnode = core.get_node(fwpos)
-	if core.get_item_group(fwnode, "palette_index") ~= 1 then
-		adjust_water_palette(fwpos)
-	end
-	local fwnodedef = core.registered_nodes[fwnode.name]
-	if not fwnodedef then
-		return
-	end
-	local fn = fwnodedef._mcl_on_liquid_transform
-	if type(fn) == "function" then
-		fn(fwpos)
-	end
-end
-
-core.register_on_liquid_transformed(function(pos_list)
+minetest.register_on_liquid_transformed(function(pos_list, node_list)
 	for _, fwpos in pairs(pos_list) do
-		on_liquid_transformed(fwpos)
+		local fwnode = minetest.get_node(fwpos)
+		if minetest.get_item_group(fwnode, "palette_index") ~= 1 then
+			local pos1, pos2 = vector.offset(fwpos, -1, -1, -1), vector.offset(fwpos, 1, 1, 1)
+			local water = minetest.find_nodes_in_area(pos1, pos2, {"group:water_palette"})
+			for _, wpos in pairs(water) do
+				local wnode = minetest.get_node(wpos)
+				local water_palette_index = mcl_util.get_palette_indexes_from_pos(wpos).water_palette_index
+				if wnode.param2 ~= water_palette_index then
+					wnode.param2 = water_palette_index
+					minetest.set_node(wpos, wnode)
+				end
+			end
+		end
 	end
-end)
+end
+)

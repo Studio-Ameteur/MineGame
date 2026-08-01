@@ -6,7 +6,6 @@ minetest.register_tool("mcl_spyglass:spyglass",{
 	inventory_image = "mcl_spyglass.png",
 	stack_max = 1,
 	_mcl_toollike_wield = true,
-	touch_interaction = "short_dig_long_place",
 })
 
 minetest.register_craft({
@@ -33,7 +32,7 @@ local function add_scope(player)
 	local wielditem = player:get_wielded_item()
 	if wielditem:get_name() == "mcl_spyglass:spyglass" then
 		spyglass_scope[player] = player:hud_add({
-			[mcl_vars.hud_type_field] = "image",
+			hud_elem_type = "image",
 			position = {x = 0.5, y = 0.5},
 			scale = {x = -100, y = -100},
 			text = "mcl_spyglass_scope.png",

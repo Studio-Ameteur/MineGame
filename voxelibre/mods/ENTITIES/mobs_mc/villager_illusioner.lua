@@ -1,5 +1,7 @@
 --MCmobs v0.4
 --maikerumine
+--made for MC like Survival game
+--License for code WTFPL and otherwise stated in readmes
 
 local S = minetest.get_translator("mobs_mc")
 local mod_bows = minetest.get_modpath("mcl_bows") ~= nil
@@ -19,13 +21,11 @@ mcl_mobs.register_mob("mobs_mc:illusioner", {
 			mcl_bows.shoot_arrow("mcl_bows:arrow", pos, dir, self.object:get_yaw(), self.object, nil, dmg)
 		end
 	end,
-	initial_properties = {
-		hp_min = 32,
-		hp_max = 32,
-		collisionbox = {-0.3, -0.01, -0.3, 0.3, 1.94, 0.3},
-	},
+	hp_min = 32,
+	hp_max = 32,
 	xp_min = 6,
 	xp_max = 6,
+	collisionbox = {-0.3, -0.01, -0.3, 0.3, 1.94, 0.3},
 	visual = "mesh",
 	mesh = "mobs_mc_illusioner.b3d",
 	textures = { {
@@ -34,8 +34,8 @@ mcl_mobs.register_mob("mobs_mc:illusioner", {
 		"mcl_bows_bow.png",
 	}, },
 	head_swivel = "head.control",
-	head_eye_height = 1.5,
-	head_bone_position = vector.new( 0, 2.2, 0 ), -- for minetest <= 5.8
+	bone_eye_height = 2.2,
+	head_eye_height = 2.2,
 	curiosity = 10,
 	sounds = {
 		-- TODO: more sounds

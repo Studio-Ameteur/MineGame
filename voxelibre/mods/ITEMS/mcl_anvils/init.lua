@@ -28,7 +28,6 @@ local function get_anvil_formspec(set_name)
 
 		"field[4.125,0.75;7.25,1;name;;" .. F(set_name) .. "]",
 		"field_close_on_enter[name;false]",
-		"field_enter_after_edit[name;true]",
 		"set_focus[name;true]",
 
 		mcl_formspec.get_itemslot_bg_v4(1.625, 2.6, 1, 1),
@@ -237,15 +236,13 @@ local function update_anvil_slots(meta)
 			if new_name ~= old_name then
 				-- Save the raw name internally
 				meta:set_string("name", new_name)
+				-- Rename item handled by tt
+				tt.reload_itemstack_description(name_item)
 				new_output = name_item
 			elseif just_rename then
 				new_output = ""
 			end
 		end
-	end
-
-	if type(new_output) == "userdata" then
-		tt.reload_itemstack_description(new_output)
 	end
 
 	-- Set the new output slot
@@ -468,7 +465,7 @@ local anvildef = {
 				because node formspecs seem to only have an empty formname in MT 0.4.16.
 				Also, sice this is on_metadata_inventory_take, we KNOW which formspec has
 				been opened by the player. So this should be safe nonetheless.
-				TODO: Update this line when node formspecs get proper identifiers in Luanti. ]]
+				TODO: Update this line when node formspecs get proper identifiers in Minetest. ]]
 				minetest.close_formspec(player:get_player_name(), "")
 			end
 		end

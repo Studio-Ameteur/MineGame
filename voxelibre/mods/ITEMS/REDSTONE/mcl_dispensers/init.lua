@@ -11,12 +11,6 @@ local S = minetest.get_translator(minetest.get_current_modname())
 local C = minetest.colorize
 local F = minetest.formspec_escape
 
----@class core.LuaEntity
----@field _shot_from_dispenser? boolean
-
--- TODO: actually should have a slight lag as in MC?
-local COOLDOWN = 0.19
-
 local dispenser_formspec = table.concat({
 	"formspec_version[4]",
 	"size[11.75,10.425]",
@@ -119,9 +113,6 @@ local dispenserdef = {
 			-- Dispense random item when triggered
 			action_on = function(pos, node)
 				local meta = minetest.get_meta(pos)
-				local gametime = core.get_gametime()
-				if gametime < meta:get_float("cooldown") then return end
-				meta:set_float("cooldown", gametime + COOLDOWN)
 				local inv = meta:get_inventory()
 				local droppos, dropdir
 				if node.name == "mcl_dispensers:dispenser" then
@@ -136,9 +127,6 @@ local dispenserdef = {
 				end
 				local dropnode = minetest.get_node(droppos)
 				local dropnodedef = minetest.registered_nodes[dropnode.name]
-				if not dropnodedef then
-					dropnodedef = minetest.registered_nodes["mapgen_stone"]
-				end
 				local stacks = {}
 				for i = 1, inv:get_size("main") do
 					local stack = inv:get_stack("main", i)
@@ -152,7 +140,7 @@ local dispenserdef = {
 					local dropitem = ItemStack(stack)
 					dropitem:set_count(1)
 					local stack_id = stacks[r].stackpos
-					local stackdef = core.registered_items[stack:get_name()]
+					local stackdef = stack:get_definition()
 
 					if not stackdef then
 						return
@@ -281,18 +269,15 @@ local dispenserdef = {
 									inv:add_item("main", od_ret)
 								else
 									local pos_variation = 100
-									local speed = 3
-									local droppos = vector.add(pos, {x = 0.5, y = 0.5, z = 0.5})
-									droppos = vector.add(droppos, vector.multiply(dropdir, 0.49))
 									droppos = {
 										x = droppos.x + math.random(-pos_variation, pos_variation) / 1000,
 										y = droppos.y + math.random(-pos_variation, pos_variation) / 1000,
 										z = droppos.z + math.random(-pos_variation, pos_variation) / 1000,
 									}
-									local item_entity = core.add_item(droppos, od_ret)
-									if item_entity then
-										item_entity:set_velocity(vector.multiply(dropdir, speed))
-									end
+									local item_entity = minetest.add_item(droppos, dropitem)
+									local drop_vel = vector.subtract(droppos, pos)
+									local speed = 3
+									item_entity:set_velocity(vector.multiply(drop_vel, speed))
 								end
 							else
 								stack:take_item()

@@ -51,9 +51,9 @@ function mob_class:feed_tame(clicker, feed_count, breed, tame, notake)
 
 		-- increase health
 
-		if self.health < self.initial_properties.hp_max and not consume_food then
+		if self.health < self.hp_max and not consume_food then
 			consume_food = true
-			self.health = math.min(self.health + 4, self.initial_properties.hp_max)
+			self.health = math.min(self.health + 4, self.hp_max)
 
 			if self.htimer < 1 then
 				self.htimer = 5
@@ -63,7 +63,7 @@ function mob_class:feed_tame(clicker, feed_count, breed, tame, notake)
 
 		-- make children grow quicker
 
-		if not consume_food and self.child then
+		if not consume_food and self.child == true then
 			consume_food = true
 			-- deduct 10% of the time to adulthood
 			self.hornytimer = self.hornytimer + ((CHILD_GROW_TIME - self.hornytimer) * 0.1)
@@ -156,11 +156,9 @@ end
 -- find two animals of same type and breed if nearby and horny
 function mob_class:check_breeding()
 
-	local pos = self.object:get_pos()
-
 	--mcl_log("In breed function")
 	-- child takes a long time before growing into adult
-	if self.child then
+	if self.child == true then
 
 		-- When a child, hornytimer is used to count age until adulthood
 		self.hornytimer = self.hornytimer + 1
@@ -170,63 +168,6 @@ function mob_class:check_breeding()
 			self.child = false
 			self.hornytimer = 0
 
-			-- Stop hitbox clipping through nodes when becoming adult
-
-			local min_adult = vector.offset(pos, self.base_colbox[1], 0, self.base_colbox[3])
-			local max_adult = vector.offset(pos, self.base_colbox[4], 0, self.base_colbox[6])
-			local max_pushes = {x_pos = 0, x_neg = 0, z_pos = 0, z_neg = 0}
-
-			local walkable_nodes = {}
-			for name, def in pairs(core.registered_nodes) do
-    			if def.walkable then
-        			table.insert(walkable_nodes, name)
-    			end
-			end
-
-			local nodes_pos = core.find_nodes_in_area( 					
-				min_adult,			
-				max_adult,
-				walkable_nodes
-			)
-			for n = 1, #nodes_pos do
-    			local node_p = nodes_pos[n]
-				local boxes = core.get_node_boxes("collision_box", node_p)
-
-				for b = 1, #boxes do
-					local box = boxes[b]
-					local min_node = vector.add(node_p, {x=box[1], y=0, z=box[3]})
-        			local max_node = vector.add(node_p, {x=box[4], y=0, z=box[6]})
-
-					if -- AABB collision check
-					min_adult.x < max_node.x and max_adult.x > min_node.x and
-					min_adult.z < max_node.z and max_adult.z > min_node.z then
-
-						-- Get smallest penetration depth for each axis
-
-						local penetration_x = math.min(max_adult.x - min_node.x, max_node.x - min_adult.x)
-            			local penetration_z = math.min(max_adult.z - min_node.z, max_node.z - min_adult.z)
-
-						-- Use the axis of least penetration
-
-						if penetration_x < penetration_z then
-
-							local sign = (pos.x - node_p.x) < 0 and "x_neg" or "x_pos"
-							max_pushes[sign] = math.max(max_pushes[sign], penetration_x)
-						else
-							local sign = (pos.z - node_p.z) < 0 and "z_neg" or "z_pos"
-							max_pushes[sign] = math.max(max_pushes[sign], penetration_z)
-						end
-					end
-				end
-			end
-
-			local final_offset = {
-    			x = max_pushes.x_pos - max_pushes.x_neg,
-    			y = 0,
-    			z = max_pushes.z_pos - max_pushes.z_neg
-			}
-
-			self.object:set_pos(vector.add(pos, final_offset))
 			self.object:set_properties({
 				textures = self.base_texture,
 				mesh = self.base_mesh,
@@ -236,7 +177,16 @@ function mob_class:check_breeding()
 			})
 
 			-- custom function when child grows up
-			if self.on_grown then self:on_grown() end
+			if self.on_grown then
+				self.on_grown(self)
+			else
+				-- jump when fully grown so as not to fall into ground
+				self.object:set_velocity({
+					x = 0,
+					y = self.jump_height,
+					z = 0
+				})
+			end
 
 			self.animation = nil
 			local anim = self._current_animation
@@ -263,6 +213,8 @@ function mob_class:check_breeding()
 	and self.hornytimer <= HORNY_TIME then
 
 		mcl_log("In breed function. All good. Do the magic.")
+
+		local pos = self.object:get_pos()
 
 		mcl_mobs.effect({x = pos.x, y = pos.y + 1, z = pos.z}, 8, "heart.png", 3, 4, 1, 0.1)
 
@@ -333,7 +285,6 @@ function mob_class:check_breeding()
 					end
 
 					local child = mcl_mobs.spawn_child(pos, parent1.name)
-					if not child then return end
 
 					local ent_c = child:get_luaentity()
 

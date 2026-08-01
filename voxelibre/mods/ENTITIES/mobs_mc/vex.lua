@@ -1,5 +1,7 @@
 --MCmobs v0.4
 --maikerumine
+--made for MC like Survival game
+--License for code WTFPL and otherwise stated in readmes
 
 local S = minetest.get_translator("mobs_mc")
 
@@ -15,14 +17,11 @@ mcl_mobs.register_mob("mobs_mc:vex", {
 	passive = false,
 	attack_type = "dogfight",
 	physical = false,
-	initial_properties = {
-		hp_min = 14,
-		hp_max = 14,
-		collisionbox = {-0.2, 0.2, -0.2, 0.2, 1.0, 0.2},  --bat
-	},
+	hp_min = 14,
+	hp_max = 14,
 	xp_min = 6,
 	xp_max = 6,
-	head_eye_height = 0.8,
+	collisionbox = {-0.2, 0.2, -0.2, 0.2, 1.0, 0.2},  --bat
 	visual = "mesh",
 	mesh = "mobs_mc_vex.b3d",
 	textures = {

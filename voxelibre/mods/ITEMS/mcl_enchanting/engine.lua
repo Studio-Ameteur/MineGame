@@ -31,9 +31,7 @@ function mcl_enchanting.load_enchantments(itemstack, enchantments)
 		mcl_enchanting.unload_enchantments(itemstack)
 		for enchantment, level in pairs(enchantments or mcl_enchanting.get_enchantments(itemstack)) do
 			local enchantment_def = mcl_enchanting.enchantments[enchantment]
-			if not enchantment_def then
-				core.log("error", "Bad enchantments: " .. dump(mcl_enchanting.get_enchantments(itemstack)))
-			elseif enchantment_def.on_enchant then
+			if enchantment_def.on_enchant then
 				enchantment_def.on_enchant(itemstack, level)
 			end
 		end
@@ -56,13 +54,13 @@ function mcl_enchanting.has_enchantment(itemstack, enchantment)
 end
 
 function mcl_enchanting.get_enchantment_description(enchantment, level)
-	local enchantment_def = mcl_enchanting.enchantments[enchantment] or {name = enchantment}
+	local enchantment_def = mcl_enchanting.enchantments[enchantment]
 	return enchantment_def.name ..
 		(enchantment_def.max_level == 1 and "" or " " .. mcl_util.to_roman(level))
 end
 
 function mcl_enchanting.get_colorized_enchantment_description(enchantment, level)
-	return minetest.colorize((mcl_enchanting.enchantments[enchantment] or {}).curse and mcl_colors.RED or mcl_colors.GRAY,
+	return minetest.colorize(mcl_enchanting.enchantments[enchantment].curse and mcl_colors.RED or mcl_colors.GRAY,
 		mcl_enchanting.get_enchantment_description(enchantment, level))
 end
 
@@ -139,7 +137,7 @@ function mcl_enchanting.can_enchant(itemstack, enchantment, level)
 	if not supported then
 		return false, "item not supported"
 	end
-	if not level or level < 0 then
+	if not level then
 		return false, "level invalid"
 	end
 	if level > enchantment_def.max_level then
@@ -187,7 +185,7 @@ function mcl_enchanting.combine(itemstack, combine_with)
 		local enchantment_def = mcl_enchanting.enchantments[enchantment]
 		local enchantment_level = enchantments[enchantment]
 		if enchantment_level then -- The enchantment already exist in the provided item
-			if enchantment_level == combine_level and enchantment_level < (itemstack:get_definition().vl_max_ench_lvl or math.huge) then
+			if enchantment_level == combine_level then
 				enchantment_level = math.min(enchantment_level + 1, enchantment_def.max_level)
 			else
 				enchantment_level = math.max(enchantment_level, combine_level)
@@ -538,10 +536,7 @@ function mcl_enchanting.show_enchanting_formspec(player)
 	for i, slot in ipairs(table_slots) do
 		any_enchantment = any_enchantment or slot
 		local enough_lapis = inv:contains_item("enchanting_lapis", ItemStack({ name = "mcl_core:lapis", count = i }))
-		local enough_levels = true
-		if mcl_gamemode.get_gamemode(player) == "survival" then
-			enough_levels = slot and slot.level_requirement <= player_levels
-		end
+		local enough_levels = slot and slot.level_requirement <= player_levels
 		local can_enchant = (slot and enough_lapis and enough_levels)
 		local ending = (can_enchant and "" or "_off")
 		local hover_ending = (can_enchant and "_hovered" or "_off")
@@ -611,12 +606,10 @@ function mcl_enchanting.handle_formspec_fields(player, formname, fields)
 			return
 		end
 		local player_level = mcl_experience.get_level(player)
-		if mcl_gamemode.get_gamemode(player) == "survival" then
-			if player_level < slot.level_requirement then
-				return
-			end
-			mcl_experience.set_level(player, player_level - button_pressed)
+		if player_level < slot.level_requirement then
+			return
 		end
+		mcl_experience.set_level(player, player_level - button_pressed)
 		inv:remove_item("enchanting_lapis", cost)
 		mcl_enchanting.set_enchanted_itemstring(itemstack)
 		mcl_enchanting.set_enchantments(itemstack, slot.enchantments)

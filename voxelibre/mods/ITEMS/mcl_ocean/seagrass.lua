@@ -110,13 +110,13 @@ for s=1, #surfaces do
 		_doc_items_create_entry = doc_create,
 		_doc_items_image = doc_img,
 		drawtype = "plantlike_rooted",
-		paramtype = "none",
+		paramtype = "light",
 		paramtype2 = "meshoptions",
 		param2 = 3,
 		tiles = def.tiles,
 		special_tiles = {
 			{
-			name = "mcl_ocean_seagrass.png",
+			image = "mcl_ocean_seagrass.png",
 			animation = {type="vertical_frames", aspect_w=16, aspect_h=16, length=1.0},
 			}
 		},

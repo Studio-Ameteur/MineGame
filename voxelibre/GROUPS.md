@@ -6,9 +6,9 @@ This document explains all the groups used in this game.
 * `not_in_creative_inventory=1`: Item will not be shown in creative inventory
 * `not_in_craft_guide=1`: Item will not be shown as result or fuel item in crafting guide (but still may be shown as ingredient)
 
-### Digging groups
+### Digging time groups
 
-The following contains basic digging groups that determine the speed at which the node is dug, as well as which tool sub-materials a node can be dug by and successfully drop an item.
+The basic digging time groups determine by which tools a node can be dug.
 
 * `pickaxey`: Diggable by pickaxe. The rating is for the possible tool materials in which the node will make its useful drop:
     * `pickaxey=1`: Wood, gold, stone, iron and diamond
@@ -17,29 +17,15 @@ The following contains basic digging groups that determine the speed at which th
     * `pickaxey=4`: Iron and diamond
     * `pickaxey=5`: Diamond
 * `axey`: Axe. Rating is same as for `pickaxey`
-* `hoey`: Hoe. Rating is same as for `pickaxey`
 * `shovely`: Shovel. Rating is same as for `pickaxey`
 * `swordy=1`: Diggable by sword (any material), and this node is *not* a cobweb
 * `swordy_cobweb=1`: Diggable by sword (any material), and this node is a cobweb
 * `shearsy=1`: Diggable by shears, and this node is *not* wool
 * `shearsy_wool=1`: Diggable by shears, and this node is wool
-
-* `handy=1`: Breakable by hand and this node gives it useful drop when dug by hand. All nodes which are breakable by pickaxe, axe, shovel, sword or shears are also automatically breakable by hand, but not necessary
+* `handy=1`: Breakable by hand and this node gives it useful drop when dug by hand. All nodes which are breakable by pickaxe, axe, shovel, sword or shears are also automatically breakable by hand, but not neccess
 * `creative_breakable=1`: Block is breakable by hand in creative mode. This group is implied if the node belongs to any other digging group
-* `indestructible=1`: Block should not be diggable in survival.
-* `unbreakable=1`: Block should not be diggable in survival.
 
-Refer to the mods "/_mcl_autogroup" and "/mcl_autogroup" to learn more about the technical handling of digging groups defined in "_mcl_diggroups". Also, refer to "mcl_tools/init.lua" for examples on how "_mcl_diggroups" is used in practice.
-
-* `dig_speed_class` This is a group applied to tools. It informs the tooltip about which helpful message should be displayed to the player relating to the tools dig speed capabilities. For more information on technical implementation of this group refer to `HELP/mcl_tt/snippets_base.lua` around ln 63.
-
-    * `dig_speed_class=1`: Painfully slow
-    * `dig_speed_class=2`: Very slow
-    * `dig_speed_class=3`: Slow
-    * `dig_speed_class=4`: Fast
-    * `dig_speed_class=5`: Very fast
-    * `dig_speed_class=6`: Extremely fast
-    * `dig_speed_class=7`: Instantaneous
+Please read <http://minecraft.gamepedia.com/Breaking> to learn how digging times work in Minecraft, as VoxeLibre is based on the same system.
 
 ### Groups for interactions
 
@@ -70,12 +56,8 @@ Refer to the mods "/_mcl_autogroup" and "/mcl_autogroup" to learn more about the
 * `destroys_items=1`: If an item happens to be *inside* this node, the item will be destroyed
 * `no_eat_delay=1`: Only for foodstuffs. When eating this, all eating delays are ignored.
 * `can_eat_when_full=1`: Only for foodstuffs. This item can be eaten when the user has a full hunger bar
-* `attached_node=1`: if the node under it is not a walkable block the node will be dropped as an item. If the node is wallmounted the wallmounted direction is checked.
 * `attached_node_facedir=1`: Like `attached_node`, but for facedir nodes
-* `attached_node_wallmounted=1`: Like `attached_node`, but for wallmounted nodes
 * `supported_node=1`: Like `attached_node`, but can be placed on any nodes that do not have the `drawtype="airlike"` attribute.
-* `supported_node_facedir=1`: Like `supported_node`, but for facedir nodes
-* `supported_node_wallmounted=1`: Like `supported_node`, but for wallmounted nodes
 * `cauldron`: Cauldron. 1: Empty. 2-4: Water height
 * `anvil`: Anvil. 1: No damage. 2-3: Higher damage levels
 * `no_rename=1`: Item cannot be renamed by anvil
@@ -94,7 +76,6 @@ Refer to the mods "/_mcl_autogroup" and "/mcl_autogroup" to learn more about the
 * `compostability=X`: Item can be used on a composter block; X (1-100) is the % chance of adding a level of compost
 * `leaves=X`: Node will spotaneously decay if no tree trunk nodes remain within 6 blocks distance.
 * `leaves_orphan`: See above, these nodes are in the process of decayed.
-* `oxidizable=1`: nodes with this group will be flagged by mcl_oxidation for potential node swap. Used by copper blocks to oxidize.
 
 #### Footnotes
 
@@ -228,7 +209,6 @@ You should not add custom items to these groups for no good reason, this is like
 
 * `clock`: Clock (rating indicates the “frame”)
 * `compass`: Compass (rating indicates the “frame”)
-* `_mcl_compass`: Regular compass (not recovery or lodestone)
 
 This has the following implication: If you want to use a compass or clock in a crafting recipe, you *must*
 use `group:compass` or `group:clock`, respectively.

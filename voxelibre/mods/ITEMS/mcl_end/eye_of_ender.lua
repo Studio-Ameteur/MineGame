@@ -2,13 +2,12 @@
 local S = minetest.get_translator(minetest.get_current_modname())
 
 minetest.register_entity("mcl_end:ender_eye", {
-	initial_properties = {
-		physical = false,
-		textures = {"mcl_end_ender_eye.png"},
-		visual_size = {x=1.5, y=1.5},
-		collisionbox = {0,0,0,0,0,0},
-		pointable = false,
-	},
+	physical = false,
+	textures = {"mcl_end_ender_eye.png"},
+	visual_size = {x=1.5, y=1.5},
+	collisionbox = {0,0,0,0,0,0},
+	pointable = false,
+
 	-- Save and restore age
 	get_staticdata = function(self)
 		return tostring(self._age)
@@ -23,7 +22,6 @@ minetest.register_entity("mcl_end:ender_eye", {
 				self._phase = 0
 			end
 		end
-		if not self._luck then self._luck = 0 end
 	end,
 
 	on_step = function(self, dtime)
@@ -157,5 +155,5 @@ minetest.register_craftitem("mcl_end:ender_eye", {
 minetest.register_craft({
 	type = "shapeless",
 	output = "mcl_end:ender_eye",
-	recipe = {"mcl_mobitems:flaming_powder", "mcl_throwing:ender_pearl"},
+	recipe = {"mcl_mobitems:blaze_powder", "mcl_throwing:ender_pearl"},
 })

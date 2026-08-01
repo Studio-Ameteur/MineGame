@@ -4,7 +4,6 @@
 --Nether roof at y -28933
 local S = minetest.get_translator(minetest.get_current_modname())
 --local mod_doc = minetest.get_modpath("doc") -> maybe add documentation ?
-local gamerule_respawnBlocksExplode = vl_tuning.setting("gamerule:respawnBlocksExplode")
 
 for i=0,4 do
 
@@ -13,11 +12,12 @@ for i=0,4 do
 			minetest.set_node(pos, {name="mcl_beds:respawn_anchor_charged_" .. i+1})
 			itemstack:take_item()
 		elseif mcl_worlds.pos_to_dimension(pos) ~= "nether" then
-			if gamerule_respawnBlocksExplode.getter() and node.name ~= "mcl_beds:respawn_anchor" then --only charged respawn anchors are exploding in the overworld & end in minecraft
+			if node.name ~= "mcl_beds:respawn_anchor" then --only charged respawn anchors are exploding in the overworld & end in minecraft
 				mcl_explosions.explode(pos, 5, {drop_chance = 0, fire = true})
 			end
 		elseif string.match(node.name, "mcl_beds:respawn_anchor_charged_") then
-			mcl_spawn.set_player_spawn_pos(player, pos, true, true)
+			minetest.chat_send_player(player.get_player_name(player), S"New respawn position set!")
+			mcl_spawn.set_spawn_pos(player, pos, nil)
 			if i == 4 then
 				awards.unlock(player:get_player_name(), "mcl:notQuiteNineLives")
 			end

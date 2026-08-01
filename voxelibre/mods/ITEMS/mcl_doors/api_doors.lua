@@ -25,7 +25,7 @@ end
 
 -- Registers a door
 --  name: The name of the door
---  def: a table with the following fields:
+--  def: a table with the folowing fields:
 --    description
 --    inventory_image
 --    groups
@@ -298,7 +298,7 @@ function mcl_doors:register_door(name, def)
 
 	local template_def = {
 		tiles = nil,
-		use_texture_alpha = "clip",
+		use_texture_alpha = minetest.features.use_texture_alpha_string_modes and "clip" or true,
 		paramtype = "light",
 		paramtype2 = "facedir",
 		sunlight_propagates = true,

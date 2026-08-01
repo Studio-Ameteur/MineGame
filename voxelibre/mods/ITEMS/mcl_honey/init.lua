@@ -15,13 +15,13 @@ function mcl_honey.wax_block(pos, node, player, itemstack)
 	end
 
 	local def = minetest.registered_nodes[node.name]
-	if not def then return end
 
-	-- Handle right-clicking nodes
-	local new_stack = mcl_util.call_on_rightclick(itemstack, player, {type = "node", under = pos})
-	if new_stack and new_stack ~= itemstack then return end
+	if def and def._mcl_waxed_variant then
+		node.name = def._mcl_waxed_variant
+	else
+		return
+	end
 
-	if not def._mcl_waxed_variant then return end
 	node.name = def._mcl_waxed_variant
 	minetest.set_node(pos, node)
 	awards.unlock(player:get_player_name(), "mcl:wax_on")
@@ -84,7 +84,7 @@ minetest.register_node("mcl_honey:honey_block", {
 	description = S("Honey Block"),
 	_doc_items_longdesc = S("Honey Block. Used as a decoration and in redstone. Is sticky on some sides."),
 	tiles = { "mcl_honey_block_side.png" },
-	use_texture_alpha = "blend",
+	use_texture_alpha = minetest.features.use_texture_alpha_string_modes and "blend" or true,
 	groups = { handy = 1, deco_block = 1, fall_damage_add_percent = -80 },
 	sounds = {
 		dug = { name = "slimenodes_dug", gain = 0.6 },

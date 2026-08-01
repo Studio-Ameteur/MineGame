@@ -3,7 +3,7 @@ local S = minetest.get_translator(modname)
 local modpath = minetest.get_modpath(modname)
 local peaceful = minetest.settings:get_bool("only_peaceful_mobs", false)
 
-local ELEMENTAL_SPAWNER_MAX_LIGHT = 11
+local BLAZE_SPAWNER_MAX_LIGHT = 11
 
 mcl_structures.register_structure("nether_outpost",{
 	place_on = {"mcl_nether:netherrack","mcl_crimson:crimson_nylium","mcl_crimson:warped_nylium","mcl_blackstone:basalt","mcl_blackstone:soul_soil","mcl_blackstone:blackstone","mcl_nether:soul_sand"},
@@ -21,7 +21,7 @@ mcl_structures.register_structure("nether_outpost",{
 	after_place = function(pos)
 		local sp = minetest.find_nodes_in_area(pos,vector.offset(pos,0,20,0),{"mcl_mobspawners:spawner"})
 		if not sp[1] then return end
-		mcl_mobspawners.setup_spawner(sp[1], "mobs_mc:elemental_fire", 0, ELEMENTAL_SPAWNER_MAX_LIGHT, 10, 8, 0)
+		mcl_mobspawners.setup_spawner(sp[1], "mobs_mc:blaze", 0, BLAZE_SPAWNER_MAX_LIGHT, 10, 8, 0)
 	end
 })
 local nbridges = {
@@ -85,7 +85,7 @@ mcl_structures.register_structure("nether_outpost_with_bridges",{
 	after_place = function(pos,def,pr)
 		local sp = minetest.find_nodes_in_area(pos,vector.offset(pos,0,20,0),{"mcl_mobspawners:spawner"})
 		if not sp[1] then return end
-		mcl_mobspawners.setup_spawner(sp[1], "mobs_mc:elemental_fire", 0, ELEMENTAL_SPAWNER_MAX_LIGHT, 10, 8, 0)
+		mcl_mobspawners.setup_spawner(sp[1], "mobs_mc:blaze", 0, BLAZE_SPAWNER_MAX_LIGHT, 10, 8, 0)
 
 		local legs = minetest.find_nodes_in_area(vector.offset(pos,-45,-2,-45),vector.offset(pos,45,0,45), "mcl_nether:nether_brick")
 		local bricks = {}
@@ -161,17 +161,15 @@ mcl_structures.register_structure("nether_bulwark",{
 				{ itemstring = "mcl_core:gold_ingot", weight = 1, amount_min = 4, amount_max=9 },
 				{ itemstring = "mcl_core:crying_obsidian", weight = 1, amount_min = 3, amount_max=8 },
 				{ itemstring = "mcl_bows:crossbow", weight = 1, func = function(stack, pr)
-					mcl_enchanting.enchant_uniform_randomly(stack, {"soul_speed", "swift_sneak"}, pr)
+					mcl_enchanting.enchant_uniform_randomly(stack, {"soul_speed"}, pr)
 				end },
 				{ itemstring = "mcl_core:goldblock", weight = 1, },
 				{ itemstring = "mcl_tools:sword_gold", weight = 1, },
 				{ itemstring = "mcl_tools:axe_gold", weight = 1, func = function(stack, pr)mcl_enchanting.enchant_uniform_randomly(stack, {"soul_speed"}, pr) end },
 				{ itemstring = "mcl_armor:helmet_gold", weight = 1, func = function(stack, pr)mcl_enchanting.enchant_uniform_randomly(stack, {"soul_speed"}, pr) end },
 				{ itemstring = "mcl_armor:chestplate_gold", weight = 1, func = function(stack, pr)mcl_enchanting.enchant_uniform_randomly(stack, {"soul_speed"}, pr) end },
-				{ itemstring = "mcl_armor:leggings_gold", weight = 1, func = function(stack, pr)mcl_enchanting.enchant_uniform_randomly(stack, {"swift_sneak"}, pr) end },
-				{ itemstring = "mcl_armor:boots_gold", weight = 1, func = function(stack, pr)mcl_enchanting.enchant_uniform_randomly(stack, {"soul_speed","swift_sneak"}, pr) end },
-				{ itemstring = "mcl_nether:ancient_debris", weight = 12 }, -- same values as MCLA for now
-				{ itemstring = "mcl_nether:netherite_scrap", weight = 4 }, -- until this is rebalanced
+				{ itemstring = "mcl_armor:leggings_gold", weight = 1, func = function(stack, pr)mcl_enchanting.enchant_uniform_randomly(stack, {"soul_speed"}, pr) end },
+				{ itemstring = "mcl_armor:boots_gold", weight = 1, func = function(stack, pr)mcl_enchanting.enchant_uniform_randomly(stack, {"soul_speed"}, pr) end },
 			}
 		},
 		{

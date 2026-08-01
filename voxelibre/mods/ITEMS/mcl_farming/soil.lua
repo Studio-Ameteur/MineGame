@@ -1,6 +1,6 @@
-local S = core.get_translator(core.get_current_modname())
+local S = minetest.get_translator(minetest.get_current_modname())
 
-core.register_node("mcl_farming:soil", {
+minetest.register_node("mcl_farming:soil", {
 	tiles = {"mcl_farming_farmland_dry.png", "default_dirt.png"},
 	description = S("Farmland"),
 	_tt_help = S("Surface for crops").."\n"..S("Can become wet"),
@@ -15,13 +15,17 @@ core.register_node("mcl_farming:soil", {
 			{-0.5, -0.5, -0.5, 0.5, 0.4375, 0.5},
 		}
 	},
+	on_construct = function(pos)
+		local meta = minetest.get_meta(pos)
+		meta:set_int("wet", 0)
+	end,
 	groups = {handy=1,shovely=1, dirtifies_below_solid=1, dirtifier=1, soil=2, soil_sapling=1, deco_block=1 },
 	sounds = mcl_sounds.node_sound_dirt_defaults(),
 	_mcl_blast_resistance = 0.6,
 	_mcl_hardness = 0.6,
 })
 
-core.register_node("mcl_farming:soil_wet", {
+minetest.register_node("mcl_farming:soil_wet", {
 	tiles = {"mcl_farming_farmland_wet.png", "default_dirt.png"},
 	description = S("Hydrated Farmland"),
 	_doc_items_longdesc = S("Hydrated farmland is used in farming, this is where you can plant and grow some plants. It is created when farmland is under rain or near water. Without water, this block will dry out eventually. This block will turn back to dirt when a solid block appears above it or a piston arm extends above it."),
@@ -34,63 +38,88 @@ core.register_node("mcl_farming:soil_wet", {
 			{-0.5, -0.5, -0.5, 0.5, 0.4375, 0.5},
 		}
 	},
+	on_construct = function(pos)
+		local meta = minetest.get_meta(pos)
+		meta:set_int("wet", 7)
+	end,
 	groups = {handy=1,shovely=1, not_in_creative_inventory=1, dirtifies_below_solid=1, dirtifier=1, soil=3, soil_sapling=1 },
 	sounds = mcl_sounds.node_sound_dirt_defaults(),
-	_mcl_blast_resistance = 0.6,
+	_mcl_blast_resistance = 0.5,
 	_mcl_hardness = 0.6,
 })
 
-core.register_abm({
+minetest.register_abm({
 	label = "Farmland hydration",
 	nodenames = {"mcl_farming:soil", "mcl_farming:soil_wet"},
-	interval = 2.73,
-	chance = 25,
+	interval = 15,
+	chance = 4,
 	action = function(pos, node)
+		-- Get wetness value
+		local meta = minetest.get_meta(pos)
+		local wet = meta:get_int("wet")
+		if not wet then
+			if node.name == "mcl_farming:soil" then
+				wet = 0
+			else
+				wet = 7
+			end
+		end
+
 		-- Turn back into dirt when covered by solid node
-		local above_node = core.get_node_or_nil(vector.offset(pos, 0, 1, 0))
-		if above_node and core.get_item_group(above_node.name, "solid") ~= 0 then
-			node.name = "mcl_core:dirt"
-			core.set_node(pos, node)
-			return
-		end
-
-		-- in rain, become wet, do not decay
-		if mcl_weather and mcl_weather.rain.raining and mcl_weather.is_outdoor(pos) then
-			if node.name == "mcl_farming:soil" then
-				node.name = "mcl_farming:soil_wet"
-				core.set_node(pos, node)
+		local above_node = minetest.get_node_or_nil({x=pos.x,y=pos.y+1,z=pos.z})
+		if above_node then
+			if minetest.get_item_group(above_node.name, "solid") ~= 0 then
+				node.name = "mcl_core:dirt"
+				minetest.set_node(pos, node)
+				return
 			end
-			return
 		end
 
-		-- Check an area of 9x2x9 around the node for nodename (9x9 on same level and 9x9 above)
-		-- include "ignore" to detect unloaded blocks
-		local nodes, counts = core.find_nodes_in_area(vector.offset(pos, -4, 0, -4), vector.offset(pos, 4, 1, 4), {"group:water", "ignore"})
-		local ignore = counts.ignore or 0
-		local has_water, fully_loaded = #nodes > ignore, ignore == 0
+		-- Check an area of 9×2×9 around the node for nodename (9×9 on same level and 9×9 below)
+		local function check_surroundings(pos, nodename)
+			local nodes = minetest.find_nodes_in_area({x=pos.x-4,y=pos.y,z=pos.z-4}, {x=pos.x+4,y=pos.y+1,z=pos.z+4}, {nodename})
+			return #nodes > 0
+		end
 
-		-- Hydrate by rain or water, do not decay
-		if has_water then
-			if node.name == "mcl_farming:soil" then
+		if check_surroundings(pos, "group:water") then
+			if node.name ~= "mcl_farming:soil_wet" then
+				-- Make it wet
 				node.name = "mcl_farming:soil_wet"
-				core.set_node(pos, node)
+				minetest.set_node(pos, node)
 			end
-			return
-		end
-		-- No decay near unloaded areas (ignore) since these might include water.
-		if not fully_loaded then return end
+		else -- No water nearby.
+			-- The decay branch (make farmland dry or turn back to dirt)
 
-		-- Decay: make wet farmland dry up
-		if node.name == "mcl_farming:soil_wet" then
-			node.name = "mcl_farming:soil"
-			core.set_node(pos, node)
-			return
-		end
-		-- Revert to dirt if wetness is 0, and no plant above
-		local above = core.get_node_or_nil(vector.offset(pos, 0, 1, 0))
-		if core.get_item_group(above.name, "plant") == 0 then
-			node.name = "mcl_core:dirt"
-			core.set_node(pos, node)
+			-- Don't decay while it's raining
+			if mcl_weather.rain.raining then
+				if mcl_weather.is_outdoor(pos) then
+					return
+				end
+			end
+			-- No decay near unloaded areas since these might include water.
+			if not check_surroundings(pos, "ignore") then
+				if wet <= 0 then
+					--local n_def = minetest.registered_nodes[node.name] or nil
+					local nn = minetest.get_node_or_nil({x=pos.x,y=pos.y+1,z=pos.z})
+					if not nn or not nn.name then
+						return
+					end
+					local nn_def = minetest.registered_nodes[nn.name] or nil
+
+					if nn_def and minetest.get_item_group(nn.name, "plant") == 0 then
+						node.name = "mcl_core:dirt"
+						minetest.set_node(pos, node)
+						return
+					end
+				else
+					if wet == 7 then
+						node.name = "mcl_farming:soil"
+						minetest.swap_node(pos, node)
+					end
+					-- Slowly count down wetness
+					meta:set_int("wet", wet-1)
+				end
+			end
 		end
 	end,
 })

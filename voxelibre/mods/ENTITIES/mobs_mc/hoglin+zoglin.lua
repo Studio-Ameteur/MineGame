@@ -1,5 +1,7 @@
 --MCmobs v0.4
 --maikerumine
+--made for MC like Survival game
+--License for code WTFPL and otherwise stated in readmes
 
 local S = minetest.get_translator("mobs_mc")
 
@@ -12,19 +14,16 @@ local hoglin = {
 	type = "monster",
 	passive = false,
 	spawn_class = "hostile",
-	initial_properties = {
-		hp_min = 40,
-		hp_max = 40,
-		collisionbox = {-.6, -0.01, -.6, .6, 1.4, .6},
-	},
+	hp_min = 40,
+	hp_max = 40,
 	xp_min = 9,
 	xp_max = 9,
-	head_eye_height = 0.9,
 	armor = {fleshy = 90},
 	attack_type = "dogfight",
 	attack_frequency = 3;
 	damage = 4,
 	reach = 1.9,
+	collisionbox = {-.6, -0.01, -.6, .6, 1.4, .6},
 	visual = "mesh",
 	mesh = "extra_mobs_hoglin.b3d",
 	textures = { {
@@ -42,10 +41,12 @@ local hoglin = {
 	walk_velocity = 1,
 	run_velocity = 2.8,
 	drops = {
-		{name = "mcl_mobitems:leather",
+		{name = "mobs_mcitems:leather",
 		chance = 1,
 		min = 0,
 		max = 1,},
+	},
+	drops = {
 		{name = "mcl_mobitems:porkchop",
 		chance = 1,
 		min = 2,
@@ -110,7 +111,7 @@ mcl_mobs.register_mob("mobs_mc:zoglin", zoglin)
 
 local baby_hoglin = table.copy(hoglin)
 baby_hoglin.description = S("Baby hoglin")
-baby_hoglin.initial_properties.collisionbox = {-.3, -0.01, -.3, .3, 0.94, .3}
+baby_hoglin.collisionbox = {-.3, -0.01, -.3, .3, 0.94, .3}
 baby_hoglin.xp_min = 20
 baby_hoglin.xp_max = 20
 baby_hoglin.visual_size = {x=hoglin.visual_size.x/2, y=hoglin.visual_size.y/2}
@@ -125,21 +126,20 @@ baby_hoglin.child = 1
 mcl_mobs.register_mob("mobs_mc:baby_hoglin", baby_hoglin)
 
 -- Regular spawning in the Nether
-mcl_mobs:spawn_setup({
-	name = "mobs_mc:hoglin",
-	dimension = "nether",
-	type_of_spawning = "ground",
-	biomes = {
-		"CrimsonForest"
-	},
-	min_light = 0,
-	max_light = minetest.LIGHT_MAX+1,
-	chance = 200,
-	interval = 30,
-	aoc = 3,
-	min_height = mcl_vars.mg_nether_min,
-	max_height = mcl_vars.mg_nether_max
-})
+mcl_mobs:spawn_specific(
+"mobs_mc:hoglin",
+"nether",
+"ground",
+{
+"CrimsonForest"
+},
+0,
+minetest.LIGHT_MAX+1,
+30,
+200,
+3,
+mcl_vars.mg_nether_min,
+mcl_vars.mg_nether_max)
 
 mcl_mobs:non_spawn_specific("mobs_mc:hoglin","overworld",0,7)
 

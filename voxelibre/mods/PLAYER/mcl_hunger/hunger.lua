@@ -1,15 +1,17 @@
--- wrapper for core.item_eat (this way we make sure other mods can't break this one)
-function core.do_item_eat(hp_change, replace_with_item, itemstack, user, pointed_thing)
+--local S = minetest.get_translator(minetest.get_current_modname())
+
+-- wrapper for minetest.item_eat (this way we make sure other mods can't break this one)
+function minetest.do_item_eat(hp_change, replace_with_item, itemstack, user, pointed_thing)
 	if not user or user:is_player() == false then
 		return itemstack
 	end
 
 	-- Call on_rightclick if the pointed node defines it
 	if pointed_thing.type == "node" then
-		local node = core.get_node(pointed_thing.under)
+		local node = minetest.get_node(pointed_thing.under)
 		if user and not user:get_player_control().sneak then
-			if core.registered_nodes[node.name] and core.registered_nodes[node.name].on_rightclick then
-				return core.registered_nodes[node.name].on_rightclick(pointed_thing.under, node, user, itemstack) or itemstack
+			if minetest.registered_nodes[node.name] and minetest.registered_nodes[node.name].on_rightclick then
+				return minetest.registered_nodes[node.name].on_rightclick(pointed_thing.under, node, user, itemstack) or itemstack
 			end
 		end
 	end
@@ -22,10 +24,10 @@ function core.do_item_eat(hp_change, replace_with_item, itemstack, user, pointed
 
 	local name = user:get_player_name()
 
-	local creative = core.is_creative_enabled(name)
+	local creative = minetest.is_creative_enabled(name)
 
 	-- Special foodstuffs like the cake may disable the eating delay
-	local no_eat_delay = creative or (core.get_item_group(itemstack:get_name(), "no_eat_delay") == 1)
+	local no_eat_delay = creative or (minetest.get_item_group(itemstack:get_name(), "no_eat_delay") == 1)
 
 	-- Allow eating only after a delay of 2 seconds. This prevents eating as an excessive speed.
 	-- FIXME: time() is not a precise timer, so the actual delay may be +- 1 second, depending on which fraction
@@ -33,8 +35,8 @@ function core.do_item_eat(hp_change, replace_with_item, itemstack, user, pointed
 	-- FIXME: In singleplayer, there's a cheat to circumvent this, simply by pausing the game between eats.
 	-- This is because os.time() obviously does not care about the pause. A fix needs a different timer mechanism.
 	if no_eat_delay or (mcl_hunger.last_eat[name] < 0) or (os.difftime(os.time(), mcl_hunger.last_eat[name]) >= 2) then
-		local can_eat_when_full = creative or not mcl_hunger.get_active()
-		or core.get_item_group(itemstack:get_name(), "can_eat_when_full") == 1
+		local can_eat_when_full = creative or (mcl_hunger.active == false)
+		or minetest.get_item_group(itemstack:get_name(), "can_eat_when_full") == 1
 		-- Don't allow eating when player has full hunger bar (some exceptional items apply)
 		if not no_eat_delay and not mcl_hunger.eat_internal[name].is_eating and not mcl_hunger.eat_internal[name].do_item_eat and (can_eat_when_full or (mcl_hunger.get_hunger(user) < 20)) then
 			local itemname = itemstack:get_name()
@@ -42,7 +44,7 @@ function core.do_item_eat(hp_change, replace_with_item, itemstack, user, pointed
 				is_eating = true,
 				is_eating_no_padding = true,
 				itemname = itemname,
-				item_definition = core.registered_items[itemname],
+				item_definition = minetest.registered_items[itemname],
 				hp_change = hp_change,
 				replace_with_item = replace_with_item,
 				itemstack = itemstack,
@@ -57,7 +59,7 @@ function core.do_item_eat(hp_change, replace_with_item, itemstack, user, pointed
 				mcl_hunger.eat_internal[name]._custom_wrapper(name)
 			end
 			itemstack = mcl_hunger.eat(hp_change, replace_with_item, itemstack, user, pointed_thing)
-			for _, callback in pairs(core.registered_on_item_eats) do
+			for _, callback in pairs(minetest.registered_on_item_eats) do
 				local result = callback(hp_change, replace_with_item, itemstack, user, pointed_thing, old_itemstack)
 				if result then
 					return result
@@ -78,7 +80,7 @@ function mcl_hunger.eat(hp_change, replace_with_item, itemstack, user, pointed_t
 		def = {}
 		if type(hp_change) ~= "number" then
 			hp_change = 1
-			core.log("error", "Wrong on_use() definition for item '" .. item .. "'")
+			minetest.log("error", "Wrong on_use() definition for item '" .. item .. "'")
 		end
 		def.saturation = hp_change
 		def.replace = replace_with_item
@@ -91,7 +93,10 @@ end
 -- Reset HUD bars after food poisoning
 
 function mcl_hunger.reset_bars_poison_hunger(player)
-	vl_hudbars.set_icon(player, "hunger", "hbhunger_icon.png")
+	hb.change_hudbar(player, "hunger", nil, nil, "hbhunger_icon.png", nil, "hbhunger_bar.png")
+	if mcl_hunger.debug then
+		hb.change_hudbar(player, "exhaustion", nil, nil, nil, nil, "mcl_hunger_bar_exhaustion.png")
+	end
 end
 
 local poisonrandomizer = PseudoRandom(os.time())
@@ -99,7 +104,7 @@ local poisonrandomizer = PseudoRandom(os.time())
 function mcl_hunger.item_eat(hunger_change, replace_with_item, poisontime, poison, exhaust, poisonchance, sound)
 	return function(itemstack, user, pointed_thing)
 		local itemname = itemstack:get_name()
-		local creative = core.is_creative_enabled(user:get_player_name())
+		local creative = minetest.is_creative_enabled(user:get_player_name())
 		if itemstack:peek_item() and user then
 			if not creative then
 				itemstack:take_item()
@@ -108,18 +113,18 @@ function mcl_hunger.item_eat(hunger_change, replace_with_item, poisontime, poiso
 			--local hp = user:get_hp()
 
 			local pos = user:get_pos()
-			local def = core.registered_items[itemname]
+			local def = minetest.registered_items[itemname]
 	
 			mcl_hunger.eat_effects(user, itemname, pos, hunger_change, def)
 
-			if mcl_hunger.get_active() and hunger_change then
+			if mcl_hunger.active and hunger_change then
 				-- Add saturation (must be defined in item table)
-				local _mcl_saturation = core.registered_items[itemname]._mcl_saturation
+				local _mcl_saturation = minetest.registered_items[itemname]._mcl_saturation
 				local saturation
 				if not _mcl_saturation then
 					saturation = 0
 				else
-					saturation = core.registered_items[itemname]._mcl_saturation
+					saturation = minetest.registered_items[itemname]._mcl_saturation
 				end
 				mcl_hunger.saturate(name, saturation, false)
 
@@ -131,11 +136,11 @@ function mcl_hunger.item_eat(hunger_change, replace_with_item, poisontime, poiso
 					mcl_hunger.set_hunger(user, h, false)
 				end
 
-				vl_hudbars.change_value(user, "hunger", h)
+				hb.change_hudbar(user, "hunger", h)
 				mcl_hunger.update_saturation_hud(user, mcl_hunger.get_saturation(user), h)
 			end
 			-- Poison
-			if mcl_hunger.get_active() and poisontime then
+			if mcl_hunger.active and poisontime then
 				local do_poison = false
 				if poisonchance then
 					if poisonrandomizer:next(0,100) < poisonchance then
@@ -151,13 +156,7 @@ function mcl_hunger.item_eat(hunger_change, replace_with_item, poisontime, poiso
 			end
 
 			if not creative then
-				local leftover = itemstack:add_item(replace_with_item)
-				if not leftover:is_empty() then
-					leftover = user:get_inventory():add_item("main", leftover)
-					if not leftover:is_empty() then
-						core.add_item(user:get_pos(), leftover)
-					end
-				end
+				itemstack:add_item(replace_with_item)
 			end
 		end
 		return itemstack
@@ -173,10 +172,10 @@ function mcl_hunger.eat_effects(user, itemname, pos, hunger_change, item_def, pi
 		local def = item_def
 		-- player height
 		pos.y = pos.y + 1.5
-		local foodtype = core.get_item_group(itemname, "food")
+		local foodtype = minetest.get_item_group(itemname, "food")
 		if foodtype == 3 then
 			-- Item is a drink, only play drinking sound (no particle)
-			core.sound_play("survival_thirst_drink", {
+			minetest.sound_play("survival_thirst_drink", {
 				max_hear_distance = 12,
 				gain = 1.0,
 				pitch = pitch or 1 + math.random(-10, 10)*0.005,
@@ -185,17 +184,17 @@ function mcl_hunger.eat_effects(user, itemname, pos, hunger_change, item_def, pi
 		else
 			-- Assume the item is a food
 			-- Add eat particle effect and sound
-			--local def = core.registered_items[itemname]
+			--local def = minetest.registered_items[itemname]
 			local texture = def.inventory_image
 			if not texture or texture == "" then
 				texture = def.wield_image
 			end
 			-- Special item definition field: _food_particles
-			-- If false, force item to not spawn any food particles when eaten
+			-- If false, force item to not spawn any food partiles when eaten
 			if def._food_particles ~= false and texture and texture ~= "" then
 				local v = user:get_velocity() or user:get_player_velocity()
 				for i = 0, math.min(math.max(8, hunger_change*2), 25) do
-					core.add_particle({
+					minetest.add_particle({
 						pos = { x = pos.x, y = pos.y, z = pos.z },
 						velocity = vector.add(v, { x = math.random(-1, 1), y = math.random(1, 2), z = math.random(-1, 1) }),
 						acceleration = { x = 0, y = math.random(-9, -5), z = 0 },
@@ -207,9 +206,9 @@ function mcl_hunger.eat_effects(user, itemname, pos, hunger_change, item_def, pi
 					})
 				end
 			end
-			core.sound_play("mcl_hunger_bite", {
+			minetest.sound_play("mcl_hunger_bite", {
 				max_hear_distance = 12,
-				gain = 0.33,
+				gain = 1.0,
 				pitch = pitch or 1 + math.random(-10, 10)*0.005,
 				object = user,
 			}, true)
@@ -219,9 +218,9 @@ function mcl_hunger.eat_effects(user, itemname, pos, hunger_change, item_def, pi
 	end
 end
 
-if mcl_hunger.get_active() then
+if mcl_hunger.active then
 	-- player-action based hunger changes
-	core.register_on_dignode(function(pos, oldnode, player)
+	minetest.register_on_dignode(function(pos, oldnode, player)
 		-- is_fake_player comes from the pipeworks, we are not interested in those
 		if not player or not player:is_player() or player.is_fake_player == true then
 			return

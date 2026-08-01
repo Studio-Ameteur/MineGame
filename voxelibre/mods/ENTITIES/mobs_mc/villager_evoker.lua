@@ -1,5 +1,7 @@
 --MCmobs v0.4
 --maikerumine
+--made for MC like Survival game
+--License for code WTFPL and otherwise stated in readmes
 
 local S = minetest.get_translator("mobs_mc")
 
@@ -18,17 +20,15 @@ mcl_mobs.register_mob("mobs_mc:evoker", {
 	can_despawn = false,
 	physical = true,
 	pathfinding = 1,
-	initial_properties = {
-		hp_min = 24,
-		hp_max = 24,
-		collisionbox = {-0.4, -0.01, -0.4, 0.4, 1.95, 0.4},
-	},
+	hp_min = 24,
+	hp_max = 24,
 	xp_min = 10,
 	xp_max = 10,
 	head_swivel = "head.control",
-	head_eye_height = 1.5,
-	head_bone_position = vector.new( 0, 6.3, 0 ), -- for minetest <= 5.8
+	bone_eye_height = 6.3,
+	head_eye_height = 2.2,
 	curiosity = 10,
+	collisionbox = {-0.4, -0.01, -0.4, 0.4, 1.95, 0.4},
 	visual = "mesh",
 	mesh = "mobs_mc_villager.b3d",
 	textures = { {
@@ -55,16 +55,14 @@ mcl_mobs.register_mob("mobs_mc:evoker", {
 		basepos.y = basepos.y + 1
 		for i=1, r do
 			local spawnpos = vector.add(basepos, minetest.yaw_to_dir(pr:next(0,360)))
-			local vex = mcl_mobs.spawn(spawnpos, "mobs_mc:vex")
-			if vex then
-				local ent = vex:get_luaentity()
+			local vex = minetest.add_entity(spawnpos, "mobs_mc:vex")
+			local ent = vex:get_luaentity()
 
-				-- Mark vexes as summoned and start their life clock (they take damage it reaches 0)
-				ent._summoned = true
-				ent._lifetimer = pr:next(33, 108)
+			-- Mark vexes as summoned and start their life clock (they take damage it reaches 0)
+			ent._summoned = true
+			ent._lifetimer = pr:next(33, 108)
 
-				table.insert(spawned_vexes[self],ent)
-			end
+			table.insert(spawned_vexes[self],ent)
 		end
 	end,
 	passive = false,

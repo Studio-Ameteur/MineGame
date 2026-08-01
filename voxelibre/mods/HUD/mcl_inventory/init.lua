@@ -21,7 +21,7 @@ end
 local function set_inventory(player, armor_change_only)
 	if minetest.is_creative_enabled(player:get_player_name()) then
 		if armor_change_only then
-			-- Stay on survival inventory page if only the armor has been changed
+			-- Stay on survival inventory plage if only the armor has been changed
 			mcl_inventory.set_creative_formspec(player, 0, 0, nil, nil, "inv")
 		else
 			mcl_inventory.set_creative_formspec(player, 0, 1)
@@ -36,7 +36,6 @@ end
 minetest.register_on_player_receive_fields(function(player, formname, fields)
 	if fields.quit then
 		mcl_util.move_player_list(player, "craft")
-		mcl_util.move_player_list(player, "craftresult")
 		mcl_util.move_player_list(player, "enchanting_lapis")
 		mcl_util.move_player_list(player, "enchanting_item")
 		if not minetest.is_creative_enabled(player:get_player_name()) and (formname == "" or formname == "main") then
@@ -53,7 +52,6 @@ end
 -- Drop crafting grid items on leaving
 minetest.register_on_leaveplayer(function(player)
 	mcl_util.move_player_list(player, "craft")
-	mcl_util.move_player_list(player, "craftresult")
 	mcl_util.move_player_list(player, "enchanting_lapis")
 	mcl_util.move_player_list(player, "enchanting_item")
 end)
@@ -82,7 +80,6 @@ minetest.register_on_joinplayer(function(player)
 	when the server has been shutdown and the server didn't clean up the player
 	inventories. ]]
 	mcl_util.move_player_list(player, "craft")
-	mcl_util.move_player_list(player, "craftresult")
 	mcl_util.move_player_list(player, "enchanting_lapis")
 	mcl_util.move_player_list(player, "enchanting_item")
 end)

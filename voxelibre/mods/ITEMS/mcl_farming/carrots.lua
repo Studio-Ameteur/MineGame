@@ -1,4 +1,4 @@
-local S = core.get_translator(core.get_current_modname())
+local S = minetest.get_translator(minetest.get_current_modname())
 
 for i=1, 7 do
 	local texture, sel_height
@@ -21,7 +21,7 @@ for i=1, 7 do
 	else
 		create = false
 	end
-	core.register_node("mcl_farming:carrot_"..i, {
+	minetest.register_node("mcl_farming:carrot_"..i, {
 		description = S("Premature Carrot Plant (Stage @1)", i),
 		_doc_items_create_entry = create,
 		_doc_items_entry_name = name,
@@ -45,16 +45,10 @@ for i=1, 7 do
 		groups = {dig_immediate=3, not_in_creative_inventory=1,plant=1,attached_node=1,dig_by_water=1,destroy_by_lava_flow=1,dig_by_piston=1},
 		sounds = mcl_sounds.node_sound_leaves_defaults(),
 		_mcl_blast_resistance = 0,
-		_on_bone_meal = function(itemstack, placer, pointed_thing)
-			local pos = pointed_thing.under
-			local n = core.get_node(pos)
-			local stages = math.random(2, 5)
-			return mcl_farming:grow_plant("plant_carrot", pos, n, stages, true)
-		end
 	})
 end
 
-core.register_node("mcl_farming:carrot", {
+minetest.register_node("mcl_farming:carrot", {
 	description = S("Mature Carrot Plant"),
 	_doc_items_longdesc = S("Mature carrot plants are ready to be harvested for carrots. They won't grow any further."),
 	paramtype = "light",
@@ -93,7 +87,7 @@ core.register_node("mcl_farming:carrot", {
 	}
 })
 
-core.register_craftitem("mcl_farming:carrot_item", {
+minetest.register_craftitem("mcl_farming:carrot_item", {
 	description = S("Carrot"),
 	_tt_help = S("Grows on farmland"),
 	_doc_items_longdesc = S("Carrots can be eaten and planted. Pigs and rabbits like carrots."),
@@ -101,21 +95,21 @@ core.register_craftitem("mcl_farming:carrot_item", {
 	inventory_image = "farming_carrot.png",
 	groups = {food = 2, eatable = 3, compostability = 65},
 	_mcl_saturation = 3.6,
-	on_secondary_use = core.item_eat(3),
+	on_secondary_use = minetest.item_eat(3),
 	on_place = mcl_farming:get_seed_or_eat_callback("mcl_farming:carrot_1", 3),
 })
 
-core.register_craftitem("mcl_farming:carrot_item_gold", {
+minetest.register_craftitem("mcl_farming:carrot_item_gold", {
 	description = S("Golden Carrot"),
 	_doc_items_longdesc = S("A golden carrot is a precious food item which can be eaten. It is really, really filling!"),
 	inventory_image = "farming_carrot_gold.png",
-	on_place = core.item_eat(6),
-	on_secondary_use = core.item_eat(6),
+	on_place = minetest.item_eat(6),
+	on_secondary_use = minetest.item_eat(6),
 	groups = { brewitem = 1, food = 2, eatable = 6 },
 	_mcl_saturation = 14.4,
 })
 
-core.register_craft({
+minetest.register_craft({
 	output = "mcl_farming:carrot_item_gold",
 	recipe = {
 		{"mcl_core:gold_nugget", "mcl_core:gold_nugget", "mcl_core:gold_nugget"},
@@ -124,9 +118,9 @@ core.register_craft({
 	}
 })
 
-mcl_farming:add_plant("plant_carrot", "mcl_farming:carrot", {"mcl_farming:carrot_1", "mcl_farming:carrot_2", "mcl_farming:carrot_3", "mcl_farming:carrot_4", "mcl_farming:carrot_5", "mcl_farming:carrot_6", "mcl_farming:carrot_7"}, 5.8013, 35)
+mcl_farming:add_plant("plant_carrot", "mcl_farming:carrot", {"mcl_farming:carrot_1", "mcl_farming:carrot_2", "mcl_farming:carrot_3", "mcl_farming:carrot_4", "mcl_farming:carrot_5", "mcl_farming:carrot_6", "mcl_farming:carrot_7"}, 25, 20)
 
-if core.get_modpath("doc") then
+if minetest.get_modpath("doc") then
 	for i=2,7 do
 		doc.add_entry_alias("nodes", "mcl_farming:carrot_1", "nodes", "mcl_farming:carrot_"..i)
 	end

@@ -139,14 +139,13 @@ function doc_identifier.identify(itemstack, user, pointed_thing)
 end
 
 function doc_identifier.solid_mode(itemstack, user, pointed_thing)
-	-- Use pointed node's on_doc_identifier_secondary_use function first, if present
-	if pointed_thing.type == "node"
-			and user and not user:get_player_control().sneak
-			then
-		local node = core.get_node(pointed_thing.under)
-		local node_definition = core.registered_nodes[node.name]
-		if node_definition and node_definition.on_doc_identifier_secondary_use then
-			return node_definition.on_doc_identifier_secondary_use(pointed_thing.under, node, user, itemstack) or itemstack
+	-- Use pointed node's on_rightclick function first, if present
+	if pointed_thing.type == "node" then
+		local node = minetest.get_node(pointed_thing.under)
+		if user and not user:get_player_control().sneak then
+			if minetest.registered_nodes[node.name] and minetest.registered_nodes[node.name].on_rightclick then
+				return minetest.registered_nodes[node.name].on_rightclick(pointed_thing.under, node, user, itemstack) or itemstack
+			end
 		end
 	end
 
@@ -154,14 +153,13 @@ function doc_identifier.solid_mode(itemstack, user, pointed_thing)
 end
 
 function doc_identifier.liquid_mode(itemstack, user, pointed_thing)
-	-- Use pointed node's on_doc_identifier_secondary_use function first, if present
-	if pointed_thing.type == "node"
-			and user and not user:get_player_control().sneak
-			then
-		local node = core.get_node(pointed_thing.under)
-		local node_definition = core.registered_nodes[node.name]
-		if node_definition and node_definition.on_doc_identifier_secondary_use then
-			return node_definition.on_doc_identifier_secondary_use(pointed_thing.under, node, user, itemstack) or itemstack
+	-- Use pointed node's on_rightclick function first, if present
+	if pointed_thing.type == "node" then
+		local node = minetest.get_node(pointed_thing.under)
+		if user and not user:get_player_control().sneak then
+			if minetest.registered_nodes[node.name] and minetest.registered_nodes[node.name].on_rightclick then
+				return minetest.registered_nodes[node.name].on_rightclick(pointed_thing.under, node, user, itemstack) or itemstack
+			end
 		end
 	end
 
@@ -171,7 +169,7 @@ end
 minetest.register_tool("doc_identifier:identifier_solid", {
 	description = S("Lookup Tool"),
 	_tt_help = S("Show help for pointed thing"),
-	_doc_items_longdesc = S("This useful little helper can be used to quickly learn more about one's closer environment. It identifies and analyzes blocks, items and other things and it shows extensive information about the thing on which it is used."),
+	_doc_items_longdesc = S("This useful little helper can be used to quickly learn more about about one's closer environment. It identifies and analyzes blocks, items and other things and it shows extensive information about the thing on which it is used."),
 	_doc_items_usagehelp = S("Punch any block, item or other thing about you wish to learn more about. This will open up the appropriate help entry. The tool comes in two modes which are changed by using. In liquid mode, this tool points to liquids as well while in solid mode this is not the case."),
 	_doc_items_hidden = false,
 	tool_capabilities = {},

@@ -1,0 +1,11 @@
+enable_damage = true
+creative_mode = false
+mod_storage_backend = sqlite3
+auth_backend = sqlite3
+player_backend = sqlite3
+backend = sqlite3
+gameid = voxelibre
+world_name = voxelibre
+load_mod_vip_system = false
+load_mod_findbiome = false
+load_mod_findbiome = false

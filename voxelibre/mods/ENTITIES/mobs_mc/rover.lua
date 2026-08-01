@@ -1,5 +1,13 @@
 --MCmobs v0.4
 --maikerumine
+--made for MC like Survival game
+--License for code WTFPL and otherwise stated in readmes
+
+-- ENDERMAN BEHAVIOUR (OLD):
+-- In this game, endermen attack the player on sight, like other monsters do.
+-- However, they have a reduced viewing range to make them less dangerous.
+-- This differs from MC, in which endermen only become hostile when provoked,
+-- and they are provoked by looking directly at them.
 
 -- Rootyjr
 -----------------------------
@@ -7,7 +15,7 @@
 -- implemented teleport to avoid arrows.
 -- implemented teleport to avoid rain.
 -- implemented teleport to chase.
--- added particles.
+-- added enderman particles.
 -- drew mcl_portal_particle1.png
 -- drew mcl_portal_particle2.png
 -- drew mcl_portal_particle3.png
@@ -21,7 +29,6 @@ local take_frequency_min = 235
 local take_frequency_max = 245
 local place_frequency_min = 235
 local place_frequency_max = 245
-
 
 minetest.register_entity("mobs_mc:ender_eyes", {
 	on_step = function(self)
@@ -83,51 +90,6 @@ local select_rover_animation = function(animation_type)
 	end
 end
 
--- Check if the rover is in eye contact with the player
-local function is_eye_contact(rover, player, tolerance)
-	local player_pos = player:get_pos()
-	local look_dir_not_normalized = player:get_look_dir()
-	local player_eye_height = player:get_properties().eye_height
-
-	if not player_eye_height then
-		core.log("warning", "[mobs_mc:rover] Player "..player:get_player_name().." has no eye height property; defaulting to 1.5")
-		player_eye_height = 1.5
-	end
-
-	local look_dir = vector.normalize(look_dir_not_normalized)
-	local look_pos = vector.new(player_pos.x, player_pos.y + player_eye_height, player_pos.z)
-	local rover_eye_pos = vector.offset(rover.object:get_pos(), 0, rover.head_eye_height, 0)
-	local eye_distance_from_player = vector.distance(rover_eye_pos, look_pos)
-	look_pos = vector.add(look_pos, vector.multiply(look_dir, eye_distance_from_player))
-
-	return mcl_mobs.target_visible(rover.object, player)
-			and vector.distance(look_pos, rover_eye_pos) <= tolerance
-end
-
--- Calculate teleport probability per second based on light level
-local function get_light_teleport_probability(light_level, dtime)
-	-- Uses exponential distribution: P(teleport in dt) = dt / expected_time
-	-- Light level 15: expected 0.1s, 14: 2s, 13: 4s, ..., 0: 30s
-	local expected_time = (core.LIGHT_MAX - light_level) * 2 + 0.1
-
-	return 1 - math.exp(-dtime / expected_time)
-end
-
--- Decide how rover reacts to being interrupted when provoked
-local function react_to_threat(rover)
-	if rover.state == "staring" or rover.state == "attack" then
-		local provoker = core.get_player_by_name(rover._provoking_player)
-		if provoker then
-			rover.attack = provoker
-			rover.state = "attack"
-			rover:teleport(provoker)
-		end
-		return
-	end
-
-	rover:teleport(nil)
-end
-
 local mobs_griefing = minetest.settings:get_bool("mobs_griefing") ~= false
 local psdefs = {{
 	amount = 5,
@@ -154,14 +116,11 @@ mcl_mobs.register_mob("mobs_mc:rover", {
 	can_despawn = true,
 	passive = true,
 	pathfinding = 1,
-	initial_properties = {
-		hp_min = 40,
-		hp_max = 40,
-		collisionbox = {-0.3, -0.01, -0.3, 0.3, 2.89, 0.3},
-	},
+	hp_min = 40,
+	hp_max = 40,
 	xp_min = 5,
 	xp_max = 5,
-	head_eye_height = 2.55,
+	collisionbox = {-0.3, -0.01, -0.3, 0.3, 2.89, 0.3},
 	visual = "mesh",
 	mesh = "vl_rover.b3d",
 	textures = { "vl_mobs_rover.png^vl_mobs_rover_face.png" },
@@ -188,132 +147,147 @@ mcl_mobs.register_mob("mobs_mc:rover", {
 		max = 1,
 		looting = "common"},
 	},
-	_vl_projectile = {
-		can_punch = function() return false end
-	},
 	animation = select_rover_animation("normal"),
 	_taken_node = "",
 	can_spawn = function(pos)
 		return #minetest.find_nodes_in_area(vector.offset(pos,0,1,0),vector.offset(pos,0,3,0),{"air"}) > 2
 	end,
 	do_custom = function(self, dtime)
-		-- Handle damage and teleportation when standing in rain
-		local rover_pos = self.object:get_pos()
-		local dim = mcl_worlds.pos_to_dimension(rover_pos)
-		if dim == "overworld" and mcl_burning.is_affected_by_rain(self.object) then
-			self.state = "stand"
-			self.object:punch(self.object, 1.0, {
-				full_punch_interval=1.0,
-				damage_groups={fleshy=self.rain_damage},
-			}, nil)
-			-- Try to teleport to safety
-			self:teleport(nil)
+		-- RAIN DAMAGE / EVASIVE WARP BEHAVIOUR HERE.
+		local enderpos = self.object:get_pos()
+		local dim = mcl_worlds.pos_to_dimension(enderpos)
+		if dim == "overworld" then
+			if mcl_weather.state == "rain" or mcl_weather.state == "lightning" then
+				local damage = true
+				local enderpos = self.object:get_pos()
+				enderpos.y = enderpos.y+2.89
+				local height = {x=enderpos.x, y=enderpos.y+512,z=enderpos.z}
+				local ray = minetest.raycast(enderpos, height, true)
+				-- Check for blocks above enderman.
+				for pointed_thing in ray do
+					if pointed_thing.type == "node" then
+						local nn = minetest.get_node(minetest.get_pointed_thing_position(pointed_thing)).name
+						local def = minetest.registered_nodes[nn]
+						if (not def) or def.walkable then
+							-- There's a node in the way. Delete arrow without damage
+							damage = false
+							break
+						end
+					end
+				end
+
+				if damage == true then
+					self.state = ""
+					--rain hurts enderman
+					self.object:punch(self.object, 1.0, {
+						full_punch_interval=1.0,
+						damage_groups={fleshy=self._damage},
+					}, nil)
+					--randomly teleport hopefully under something.
+					self:teleport(nil)
+				end
+			end
 		end
 
-		-- If burning and not in attack state, try to teleport to safety
-		if mcl_burning.is_burning(self.object) and self.state ~= "attack" then
-			react_to_threat(self)
+		-- AGRESSIVELY WARP/CHASE PLAYER BEHAVIOUR HERE.
+		if self.state == "attack" then
+			self.object:set_properties({textures={"vl_mobs_rover.png^vl_mobs_rover_face_angry.png"}})
+			if self.attack then
+				local target = self.attack
+				local pos = target:get_pos()
+				if pos ~= nil then
+					if vector.distance(self.object:get_pos(), target:get_pos()) > 10 then
+						self:teleport(target)
+					end
+				end
+			end
+		else --if not attacking try to tp to the dark
+			self.object:set_properties({textures={"vl_mobs_rover.png^vl_mobs_rover_face.png"}})
+			if dim == 'overworld' then
+				local light = minetest.get_node_light(enderpos)
+				if light and light > minetest.LIGHT_MAX then
+					self:teleport(nil)
+				end
+			end
 		end
+		-- ARROW / DAYTIME PEOPLE AVOIDANCE BEHAVIOUR HERE.
+		-- Check for arrows and people nearby.
 
-		-- If standing in liquid, teleport to safety
-		local standing_nodef = core.registered_nodes[self.standing_in]
-		if standing_nodef.groups.liquid then
-			react_to_threat(self)
-		end
-
-		-- Check for arrows and people nearby and teleport away if found.
-		rover_pos = self.object:get_pos()
-		rover_pos.y = rover_pos.y + 1.5
-		local objs = core.get_objects_inside_radius(rover_pos, 2)
+		enderpos = self.object:get_pos()
+		enderpos.y = enderpos.y + 1.5
+		local objs = minetest.get_objects_inside_radius(enderpos, 2)
 		for n = 1, #objs do
 			local obj = objs[n]
 			if obj then
-				if core.is_player(obj) then
-					if self.state == "staring" or self.state == "attack" then
-						self:teleport(obj)
-					else
-						self:teleport(nil)
-					end
+				if minetest.is_player(obj) then
+					-- Warp from players during day.
+					--if (minetest.get_timeofday() * 24000) > 5001 and (minetest.get_timeofday() * 24000) < 19000 then
+					--	self:teleport(nil)
+					--end
 				else
 					local lua = obj:get_luaentity()
 					if lua then
 						if lua.name == "mcl_bows:arrow_entity" or lua.name == "mcl_throwing:snowball_entity" then
-							react_to_threat(self)
+							self:teleport(nil)
 						end
 					end
 				end
 			end
 		end
 
-		-- State management
-		if self.state == "staring" then
-			local provoker = core.get_player_by_name(self._provoking_player)
-
-			-- Check if the provoking player disconnected or has gotten too far away
-			if not provoker or vector.distance(rover_pos, provoker:get_pos()) > self.view_range then
-				self._provoking_player = nil
-				self.state = "stand"
-				self:teleport(nil)
-			elseif is_eye_contact(self, provoker, 0.8) then
-				local player_pos = provoker:get_pos()
-				self:turn_in_direction(player_pos.x - rover_pos.x, player_pos.z - rover_pos.z, 1)
-			else
-				-- Player looked away, attack
-				self.attack = provoker
-				self.state = "attack"
-				self:teleport(provoker)
-			end
-
-			-- Do nothing else while being provoked
-			return
-
-		elseif self.state == "attack" then
-			self.object:set_properties({textures={"vl_mobs_rover.png^vl_mobs_rover_face_angry.png"}})
-
-			-- Warp aggresively towards target if too far away
-			if self.attack then
-				local target = self.attack
-				local pos = target:get_pos()
-				if pos then
-					local distance = vector.distance(rover_pos, pos)
-					if self.view_range >= distance and distance > 10 then
-						self:teleport(target)
-					end
+		-- PROVOKED BEHAVIOUR HERE.
+		local enderpos = self.object:get_pos()
+		if self.provoked == "broke_contact" then
+			self.provoked = "false"
+			--if (minetest.get_timeofday() * 24000) > 5001 and (minetest.get_timeofday() * 24000) < 19000 then
+			--	self:teleport(nil)
+			--	self.state = ""
+			--else
+				if self.attack ~= nil and enable_damage then
+					self.state = 'attack'
 				end
-			end
-
-			-- Already attacking, do nothing else
-			return
-
-		else
-			self.object:set_properties({textures={"vl_mobs_rover.png^vl_mobs_rover_face.png"}})
-
-			-- Spontaneous teleport based on light level in overworld
-			if dim == 'overworld' then
-				local light = core.get_node_light(rover_pos)
-				if light then
-					local prob = get_light_teleport_probability(light, dtime)
-					if math.random() < prob then
-						self:teleport(nil)
-					end
-				end
-			end
+			--end
 		end
-
 		-- Check to see if people are near by enough to look at us.
 		for _,obj in pairs(minetest.get_connected_players()) do
 
 			--check if they are within radius
 			local player_pos = obj:get_pos()
 			if player_pos then -- prevent crashing in 1 in a million scenario
-				-- Rovers become motionless on eye contact
-				if is_eye_contact(self, obj, 0.4) then
-					self._provoking_player = obj:get_player_name()
-					self:set_velocity(0)
-					self:set_animation("stand", true)
-					self.state = "staring"
-					self:turn_in_direction(player_pos.x - rover_pos.x, player_pos.z - rover_pos.z, 1)
-					break
+
+				local ender_distance = vector.distance(enderpos, player_pos)
+				if ender_distance <= 64 then
+
+					-- Check if they are looking at us.
+					local look_dir_not_normalized = obj:get_look_dir()
+					local look_dir = vector.normalize(look_dir_not_normalized)
+					local player_eye_height = obj:get_properties().eye_height
+
+					--skip player if they have no data - log it
+					if not player_eye_height then
+						minetest.log("error", "Enderman at location: ".. dump(enderpos).." has indexed a null player!")
+					else
+
+						--calculate very quickly the exact location the player is looking
+						--within the distance between the two "heads" (player and enderman)
+						local look_pos = vector.new(player_pos.x, player_pos.y + player_eye_height, player_pos.z)
+						local look_pos_base = look_pos
+						local ender_eye_pos = vector.new(enderpos.x, enderpos.y + 2.75, enderpos.z)
+						local eye_distance_from_player = vector.distance(ender_eye_pos, look_pos)
+						look_pos = vector.add(look_pos, vector.multiply(look_dir, eye_distance_from_player))
+
+						--if looking in general head position, turn hostile
+						if minetest.line_of_sight(ender_eye_pos, look_pos_base) and vector.distance(look_pos, ender_eye_pos) <= 0.4 then
+							self.provoked = "staring"
+							self.attack = minetest.get_player_by_name(obj:get_player_name())
+							break
+						else -- I'm not sure what this part does, but I don't want to break anything - jordan4ibanez
+							if self.provoked == "staring" then
+								self.provoked = "broke_contact"
+							end
+						end
+
+					end
 				end
 			end
 		end
@@ -472,7 +446,7 @@ mcl_mobs.register_mob("mobs_mc:rover", {
 					end
 				end
 				if node_ok then
-					break
+					 break
 				end
 			end
 		end
@@ -485,16 +459,17 @@ mcl_mobs.register_mob("mobs_mc:rover", {
 	end,
 	do_punch = function(self, hitter, tflp, tool_caps, dir)
 		-- damage from rain caused by itself so we don't want it to attack itself.
-        if hitter ~= self.object and hitter ~= nil then
-            if self.state ~= "attack" then
-                self.state = "attack"
-                self.attack = hitter
-                self:teleport(hitter)
-            elseif pr:next(1, 5) == 1 then
-                -- Teleport with 20% chance
-                self:teleport(hitter)
-            end
-        end
+		if hitter ~= self.object and hitter ~= nil then
+			--if (minetest.get_timeofday() * 24000) > 5001 and (minetest.get_timeofday() * 24000) < 19000 then
+			--	self:teleport(nil)
+			--else
+			if pr:next(1, 8) == 8 then --FIXME: real mc rate
+				self:teleport(hitter)
+			end
+			self.attack=hitter
+			self.state="attack"
+			--end
+		end
 	end,
 	after_activate = function(self, staticdata, def, dtime)
 		if not self._taken_node or self._taken_node == "" then
@@ -513,247 +488,225 @@ mcl_mobs.register_mob("mobs_mc:rover", {
 	end,
 	armor = { fleshy = 100, water_vulnerable = 100 },
 	water_damage = 8,
-	rain_damage = 2,
 	view_range = 64,
 	fear_height = 4,
 	attack_type = "dogfight",
-	_on_after_convert = function(obj)
+})
+
+-- compat
+minetest.register_entity("mobs_mc:enderman", {
+	on_activate = function(self, staticdata, dtime)
+		local obj = minetest.add_entity(self.object:get_pos(), "mobs_mc:rover", staticdata)
 		obj:set_properties({
 			mesh = "vl_rover.b3d",
 			textures = { "vl_mobs_rover.png^vl_mobs_rover_face.png" },
 			visual_size = {x=10, y=10},
 		})
-	end
-}) -- END mcl_mobs.register_mob("mobs_mc:rover", {
-
--- compat
-mcl_mobs.register_conversion("mobs_mc:enderman", "mobs_mc:rover")
+		self.object:remove()
+	end,
+})
 
 -- End spawn
-mcl_mobs:spawn_setup({
-	name = "mobs_mc:rover",
-	dimension = "end",
-	type_of_spawning = "ground",
-	biomes = {
-		"End",
-		"EndIsland",
-		"EndMidlands",
-		"EndBarrens",
-		"EndBorder",
-		"EndSmallIslands"
-	},
-	min_light = 0,
-	max_light = minetest.LIGHT_MAX+1,
-	chance = 100,
-	interval = 30,
-	aoc = 12,
-	min_height = mcl_vars.mg_end_min,
-	max_height = mcl_vars.mg_end_max
-})
+mcl_mobs:spawn_specific(
+"mobs_mc:rover",
+"end",
+"ground",
+{
+"End",
+"EndIsland",
+"EndMidlands",
+"EndBarrens",
+"EndBorder",
+"EndSmallIslands"
+},
+0,
+minetest.LIGHT_MAX+1,
+30,
+100,
+12,
+mcl_vars.mg_end_min,
+mcl_vars.mg_end_max)
 -- Overworld spawn
-mcl_mobs:spawn_setup({
-	name = "mobs_mc:rover",
-	dimension = "overworld",
-	type_of_spawning = "ground",
-	biomes = {
-		"Mesa",
-		"FlowerForest",
-		"Swampland",
-		"Taiga",
-		"ExtremeHills",
-		"Jungle",
-		"Savanna",
-		"BirchForest",
-		"MegaSpruceTaiga",
-		"MegaTaiga",
-		"ExtremeHills+",
-		"Forest",
-		"Plains",
-		"Desert",
-		"ColdTaiga",
-		"IcePlainsSpikes",
-		"SunflowerPlains",
-		"IcePlains",
-		"RoofedForest",
-		"ExtremeHills+_snowtop",
-		"MesaPlateauFM_grasstop",
-		"JungleEdgeM",
-		"ExtremeHillsM",
-		"JungleM",
-		"BirchForestM",
-		"MesaPlateauF",
-		"MesaPlateauFM",
-		"MesaPlateauF_grasstop",
-		"MesaBryce",
-		"JungleEdge",
-		"SavannaM",
-		"FlowerForest_beach",
-		"Forest_beach",
-		"StoneBeach",
-		"ColdTaiga_beach_water",
-		"Taiga_beach",
-		"Savanna_beach",
-		"Plains_beach",
-		"ExtremeHills_beach",
-		"ColdTaiga_beach",
-		"Swampland_shore",
-		"JungleM_shore",
-		"Jungle_shore",
-		"MesaPlateauFM_sandlevel",
-		"MesaPlateauF_sandlevel",
-		"MesaBryce_sandlevel",
-		"Mesa_sandlevel",
-		"RoofedForest_ocean",
-		"JungleEdgeM_ocean",
-		"BirchForestM_ocean",
-		"BirchForest_ocean",
-		"IcePlains_deep_ocean",
-		"Jungle_deep_ocean",
-		"Savanna_ocean",
-		"MesaPlateauF_ocean",
-		"ExtremeHillsM_deep_ocean",
-		"Savanna_deep_ocean",
-		"SunflowerPlains_ocean",
-		"Swampland_deep_ocean",
-		"Swampland_ocean",
-		"MegaSpruceTaiga_deep_ocean",
-		"ExtremeHillsM_ocean",
-		"JungleEdgeM_deep_ocean",
-		"SunflowerPlains_deep_ocean",
-		"BirchForest_deep_ocean",
-		"IcePlainsSpikes_ocean",
-		"Mesa_ocean",
-		"StoneBeach_ocean",
-		"Plains_deep_ocean",
-		"JungleEdge_deep_ocean",
-		"SavannaM_deep_ocean",
-		"Desert_deep_ocean",
-		"Mesa_deep_ocean",
-		"ColdTaiga_deep_ocean",
-		"Plains_ocean",
-		"MesaPlateauFM_ocean",
-		"Forest_deep_ocean",
-		"JungleM_deep_ocean",
-		"FlowerForest_deep_ocean",
-		"MegaTaiga_ocean",
-		"StoneBeach_deep_ocean",
-		"IcePlainsSpikes_deep_ocean",
-		"ColdTaiga_ocean",
-		"SavannaM_ocean",
-		"MesaPlateauF_deep_ocean",
-		"MesaBryce_deep_ocean",
-		"ExtremeHills+_deep_ocean",
-		"ExtremeHills_ocean",
-		"Forest_ocean",
-		"MegaTaiga_deep_ocean",
-		"JungleEdge_ocean",
-		"MesaBryce_ocean",
-		"MegaSpruceTaiga_ocean",
-		"ExtremeHills+_ocean",
-		"Jungle_ocean",
-		"RoofedForest_deep_ocean",
-		"IcePlains_ocean",
-		"FlowerForest_ocean",
-		"ExtremeHills_deep_ocean",
-		"MesaPlateauFM_deep_ocean",
-		"Desert_ocean",
-		"Taiga_ocean",
-		"BirchForestM_deep_ocean",
-		"Taiga_deep_ocean",
-		"JungleM_ocean",
-		"FlowerForest_underground",
-		"JungleEdge_underground",
-		"StoneBeach_underground",
-		"MesaBryce_underground",
-		"Mesa_underground",
-		"RoofedForest_underground",
-		"Jungle_underground",
-		"Swampland_underground",
-		"BirchForest_underground",
-		"Plains_underground",
-		"MesaPlateauF_underground",
-		"ExtremeHills_underground",
-		"MegaSpruceTaiga_underground",
-		"BirchForestM_underground",
-		"SavannaM_underground",
-		"MesaPlateauFM_underground",
-		"Desert_underground",
-		"Savanna_underground",
-		"Forest_underground",
-		"SunflowerPlains_underground",
-		"ColdTaiga_underground",
-		"IcePlains_underground",
-		"IcePlainsSpikes_underground",
-		"MegaTaiga_underground",
-		"Taiga_underground",
-		"ExtremeHills+_underground",
-		"JungleM_underground",
-		"ExtremeHillsM_underground",
-		"JungleEdgeM_underground",
-		"BambooJungle",
-		"BambooJungleM",
-		"BambooJungleEdge",
-		"BambooJungleEdgeM",
-		"BambooJungle_underground",
-		"BambooJungleM_underground",
-		"BambooJungleEdge_underground",
-		"BambooJungleEdgeM_underground",
-		"BambooJungle_ocean",
-		"BambooJungleM_ocean",
-		"BambooJungleEdge_ocean",
-		"BambooJungleEdgeM_ocean",
-		"BambooJungle_deep_ocean",
-		"BambooJungleM_deep_ocean",
-		"BambooJungleEdge_deep_ocean",
-		"BambooJungleEdgeM_deep_ocean",
-		"BambooJungle_shore",
-		"BambooJungleM_shore",
-		"BambooJungleEdge_shore",
-		"BambooJungleEdgeM_shore",
-	},
-	min_light = 0,
-	max_light = 7,
-	chance = 100,
-	interval = 30,
-	aoc = 2,
-	min_height = mcl_vars.mg_overworld_min,
-	max_height = mcl_vars.mg_overworld_max
-})
+mcl_mobs:spawn_specific(
+"mobs_mc:rover",
+"overworld",
+"ground",
+{
+"Mesa",
+"FlowerForest",
+"Swampland",
+"Taiga",
+"ExtremeHills",
+"Jungle",
+"Savanna",
+"BirchForest",
+"MegaSpruceTaiga",
+"MegaTaiga",
+"ExtremeHills+",
+"Forest",
+"Plains",
+"Desert",
+"ColdTaiga",
+"IcePlainsSpikes",
+"SunflowerPlains",
+"IcePlains",
+"RoofedForest",
+"ExtremeHills+_snowtop",
+"MesaPlateauFM_grasstop",
+"JungleEdgeM",
+"ExtremeHillsM",
+"JungleM",
+"BirchForestM",
+"MesaPlateauF",
+"MesaPlateauFM",
+"MesaPlateauF_grasstop",
+"MesaBryce",
+"JungleEdge",
+"SavannaM",
+"FlowerForest_beach",
+"Forest_beach",
+"StoneBeach",
+"ColdTaiga_beach_water",
+"Taiga_beach",
+"Savanna_beach",
+"Plains_beach",
+"ExtremeHills_beach",
+"ColdTaiga_beach",
+"Swampland_shore",
+"JungleM_shore",
+"Jungle_shore",
+"MesaPlateauFM_sandlevel",
+"MesaPlateauF_sandlevel",
+"MesaBryce_sandlevel",
+"Mesa_sandlevel",
+"RoofedForest_ocean",
+"JungleEdgeM_ocean",
+"BirchForestM_ocean",
+"BirchForest_ocean",
+"IcePlains_deep_ocean",
+"Jungle_deep_ocean",
+"Savanna_ocean",
+"MesaPlateauF_ocean",
+"ExtremeHillsM_deep_ocean",
+"Savanna_deep_ocean",
+"SunflowerPlains_ocean",
+"Swampland_deep_ocean",
+"Swampland_ocean",
+"MegaSpruceTaiga_deep_ocean",
+"ExtremeHillsM_ocean",
+"JungleEdgeM_deep_ocean",
+"SunflowerPlains_deep_ocean",
+"BirchForest_deep_ocean",
+"IcePlainsSpikes_ocean",
+"Mesa_ocean",
+"StoneBeach_ocean",
+"Plains_deep_ocean",
+"JungleEdge_deep_ocean",
+"SavannaM_deep_ocean",
+"Desert_deep_ocean",
+"Mesa_deep_ocean",
+"ColdTaiga_deep_ocean",
+"Plains_ocean",
+"MesaPlateauFM_ocean",
+"Forest_deep_ocean",
+"JungleM_deep_ocean",
+"FlowerForest_deep_ocean",
+"MegaTaiga_ocean",
+"StoneBeach_deep_ocean",
+"IcePlainsSpikes_deep_ocean",
+"ColdTaiga_ocean",
+"SavannaM_ocean",
+"MesaPlateauF_deep_ocean",
+"MesaBryce_deep_ocean",
+"ExtremeHills+_deep_ocean",
+"ExtremeHills_ocean",
+"Forest_ocean",
+"MegaTaiga_deep_ocean",
+"JungleEdge_ocean",
+"MesaBryce_ocean",
+"MegaSpruceTaiga_ocean",
+"ExtremeHills+_ocean",
+"Jungle_ocean",
+"RoofedForest_deep_ocean",
+"IcePlains_ocean",
+"FlowerForest_ocean",
+"ExtremeHills_deep_ocean",
+"MesaPlateauFM_deep_ocean",
+"Desert_ocean",
+"Taiga_ocean",
+"BirchForestM_deep_ocean",
+"Taiga_deep_ocean",
+"JungleM_ocean",
+"FlowerForest_underground",
+"JungleEdge_underground",
+"StoneBeach_underground",
+"MesaBryce_underground",
+"Mesa_underground",
+"RoofedForest_underground",
+"Jungle_underground",
+"Swampland_underground",
+"BirchForest_underground",
+"Plains_underground",
+"MesaPlateauF_underground",
+"ExtremeHills_underground",
+"MegaSpruceTaiga_underground",
+"BirchForestM_underground",
+"SavannaM_underground",
+"MesaPlateauFM_underground",
+"Desert_underground",
+"Savanna_underground",
+"Forest_underground",
+"SunflowerPlains_underground",
+"ColdTaiga_underground",
+"IcePlains_underground",
+"IcePlainsSpikes_underground",
+"MegaTaiga_underground",
+"Taiga_underground",
+"ExtremeHills+_underground",
+"JungleM_underground",
+"ExtremeHillsM_underground",
+"JungleEdgeM_underground",
+},
+0,
+7,
+30,
+100,
+2,
+mcl_vars.mg_overworld_min,
+mcl_vars.mg_overworld_max)
 
 -- Nether spawn (rare)
-mcl_mobs:spawn_setup({
-	name = "mobs_mc:rover",
-	dimension = "nether",
-	type_of_spawning = "ground",
-	biomes = {
-		"Nether",
-		"SoulsandValley",
-	},
-	min_light = 0,
-	max_light = 11,
-	chance = 100,
-	interval = 30,
-	aoc = 4,
-	min_height = mcl_vars.mg_nether_min,
-	max_height = mcl_vars.mg_nether_max
-})
+mcl_mobs:spawn_specific(
+"mobs_mc:rover",
+"nether",
+"ground",
+{
+"Nether",
+"SoulsandValley",
+},
+0,
+11,
+30,
+100,
+4,
+mcl_vars.mg_nether_min,
+mcl_vars.mg_nether_max)
 
 -- Warped Forest spawn (common)
-mcl_mobs:spawn_setup({
-	name = "mobs_mc:rover",
-	dimension = "nether",
-	type_of_spawning = "ground",
-	biomes = {
-		"WarpedForest"
-	},
-	min_light = 0,
-	max_light = 11,
-	chance = 100,
-	interval = 30,
-	aoc = 4,
-	min_height = mcl_vars.mg_nether_min,
-	max_height = mcl_vars.mg_nether_max
-})
+mcl_mobs:spawn_specific(
+"mobs_mc:rover",
+"nether",
+"ground",
+{
+"WarpedForest"
+},
+0,
+11,
+30,
+100,
+4,
+mcl_vars.mg_nether_min,
+mcl_vars.mg_nether_max)
 
 -- spawn eggs
 mcl_mobs.register_egg("mobs_mc:rover", S("Rover"), "#252525", "#151515", 0)

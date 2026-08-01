@@ -1,35 +1,32 @@
-local mod_path = core.get_modpath("mcl_farming")
-
 mcl_farming = {}
 
 -- IMPORTANT API AND HELPER FUNCTIONS --
 -- Contain functions for planting seed, addind plant growth and gourds (melon/pumpkin-like)
-dofile(mod_path.."/shared_functions.lua")
+dofile(minetest.get_modpath("mcl_farming").."/shared_functions.lua")
 
 -- ========= SOIL =========
-dofile(mod_path.."/soil.lua")
+dofile(minetest.get_modpath("mcl_farming").."/soil.lua")
 
 -- ========= HOES =========
-dofile(mod_path.."/hoes.lua")
+dofile(minetest.get_modpath("mcl_farming").."/hoes.lua")
 
 -- ========= WHEAT =========
-dofile(mod_path.."/wheat.lua")
+dofile(minetest.get_modpath("mcl_farming").."/wheat.lua")
 
 -- ======= PUMPKIN =========
-dofile(mod_path.."/pumpkin.lua")
+dofile(minetest.get_modpath("mcl_farming").."/pumpkin.lua")
 
 -- ========= MELON =========
-dofile(mod_path.."/melon.lua")
+dofile(minetest.get_modpath("mcl_farming").."/melon.lua")
 
 -- ========= CARROT =========
-dofile(mod_path.."/carrots.lua")
+dofile(minetest.get_modpath("mcl_farming").."/carrots.lua")
 
 -- ========= POTATOES =========
-dofile(mod_path.."/potatoes.lua")
+dofile(minetest.get_modpath("mcl_farming").."/potatoes.lua")
 
 -- ========= BEETROOT =========
-dofile(mod_path.."/beetroot.lua")
+dofile(minetest.get_modpath("mcl_farming").."/beetroot.lua")
 
 -- ========= SWEET BERRY =========
-dofile(mod_path.."/sweet_berry.lua")
-
+dofile(minetest.get_modpath("mcl_farming").."/sweet_berry.lua")

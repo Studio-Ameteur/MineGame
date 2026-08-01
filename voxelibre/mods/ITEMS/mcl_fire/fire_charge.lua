@@ -27,19 +27,18 @@ minetest.register_craftitem("mcl_fire:fire_charge", {
 		end
 
 		-- Ignite/light fire
-		local used = nil
 		local node = get_node(pointed_thing.under)
 		if pointed_thing.type == "node" then
 			local nodedef = minetest.registered_nodes[node.name]
 			if nodedef and nodedef._on_ignite then
 				local overwrite = nodedef._on_ignite(user, pointed_thing)
 				if not overwrite then
-					used = mcl_fire.set_fire(pointed_thing, user, false)
+					mcl_fire.set_fire(pointed_thing, user, false)
 				end
 			else
-				used = mcl_fire.set_fire(pointed_thing, user, false)
+				mcl_fire.set_fire(pointed_thing, user, false)
 			end
-			if not minetest.is_creative_enabled(user:get_player_name()) and used then
+			if not minetest.is_creative_enabled(user:get_player_name()) then
 				itemstack:take_item()
 			end
 		end
@@ -48,14 +47,12 @@ minetest.register_craftitem("mcl_fire:fire_charge", {
 	_on_dispense = function(stack, pos, droppos, dropnode, dropdir)
 		-- Throw fire charge
 		local shootpos = vector.add(pos, vector.multiply(dropdir, 0.51))
-		local fireball = add_entity(shootpos, "mobs_mc:small_fireball")
-		if fireball then
-			local ent = fireball:get_luaentity()
-			ent._shot_from_dispenser = true
-			local v = ent.velocity or 1
-			fireball:set_velocity(vector.multiply(dropdir, v))
-			ent.switch = 1
-		end
+		local fireball = add_entity(shootpos, "mobs_mc:blaze_fireball")
+		local ent = fireball:get_luaentity()
+		ent._shot_from_dispenser = true
+		local v = ent.velocity or 1
+		fireball:set_velocity(vector.multiply(dropdir, v))
+		ent.switch = 1
 		stack:take_item()
 	end,
 })
@@ -63,5 +60,5 @@ minetest.register_craftitem("mcl_fire:fire_charge", {
 minetest.register_craft({
 	type = "shapeless",
 	output = "mcl_fire:fire_charge 3",
-	recipe = { "mcl_mobitems:flaming_powder", "group:coal", "mcl_mobitems:gunpowder" },
+	recipe = { "mcl_mobitems:blaze_powder", "group:coal", "mcl_mobitems:gunpowder" },
 })

@@ -1,5 +1,5 @@
 function vl_hollow_logs.register_craft(material, result)
-	core.register_craft({
+	minetest.register_craft({
 		output = "vl_hollow_logs:"..result.."_hollow 4",
 		recipe = {
 			{"",  material, ""},
@@ -7,15 +7,6 @@ function vl_hollow_logs.register_craft(material, result)
 			{"", material, ""}
 		},
 		type = "shaped"
-	})
-
-	core.register_craft({
-		output = "vl_hollow_logs:"..result.."_hollow_ladder",
-		recipe = {
-			"vl_hollow_logs:"..result.."_hollow",
-			"mcl_core:ladder"
-		},
-		type = "shapeless"
 	})
 
 	mcl_stonecutter.register_recipe(material, "vl_hollow_logs:"..result.."_hollow", 1)
@@ -43,13 +34,13 @@ for _, defs in pairs(vl_hollow_logs.logs) do
 	vl_hollow_logs.register_craft(stripped_material, stripped_name)
 end
 
-core.register_craft({
+minetest.register_craft({
 	burntime = 10,
 	recipe = "group:hollow_log_burnable",
 	type = "fuel",
 })
 
-core.register_craft({
+minetest.register_craft({
 	cooktime = 5,
 	output = "mcl_core:charcoal_lump",
 	recipe = "group:hollow_log_burnable",

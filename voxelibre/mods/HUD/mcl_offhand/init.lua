@@ -81,7 +81,7 @@ minetest.register_globalstep(function(dtime)
 
 			if not offhand_hud.slot then
 				offhand_hud.slot = player:hud_add({
-					[mcl_vars.hud_type_field] = "image",
+					hud_elem_type = "image",
 					position = position,
 					offset = offset,
 					scale = {x = 0.46875, y = 0.46875},
@@ -91,7 +91,7 @@ minetest.register_globalstep(function(dtime)
 			end
 			if not offhand_hud.item then
 				offhand_hud.item = player:hud_add({
-					[mcl_vars.hud_type_field] = "image",
+					hud_elem_type = "image",
 					position = position,
 					offset = offset,
 					scale = {x = 0.375, y = 0.375},
@@ -105,7 +105,7 @@ minetest.register_globalstep(function(dtime)
 				if offhand_get_wear(player) > 0 then
 					local texture = "mcl_wear_bar.png^[colorize:#000000"
 					offhand_hud.wear_bar_bg = player:hud_add({
-						[mcl_vars.hud_type_field] = "image",
+						hud_elem_type = "image",
 						position = {x = 0.5, y = 1},
 						offset = {x = -320, y = -13},
 						scale = {x = 40, y = 3},
@@ -113,7 +113,7 @@ minetest.register_globalstep(function(dtime)
 						z_index = 2,
 					})
 					offhand_hud.wear_bar = player:hud_add({
-						[mcl_vars.hud_type_field] = "image",
+						hud_elem_type = "image",
 						position = {x = 0.5, y = 1},
 						offset = {x = -320, y = -13},
 						scale = {x = 10, y = 3},
@@ -126,7 +126,7 @@ minetest.register_globalstep(function(dtime)
 
 			if not offhand_hud.item_count and offhand_get_count(player) > 1 then
 				offhand_hud.item_count = player:hud_add({
-					[mcl_vars.hud_type_field] = "text",
+					hud_elem_type = "text",
 					position = {x = 0.5, y = 1},
 					offset = {x = -298, y = -18},
 					scale = {x = 1, y = 1},
@@ -181,7 +181,7 @@ end)
 minetest.register_on_player_inventory_action(function(player, action, inventory, inventory_info)
 	local from_offhand = inventory_info.from_list == "offhand"
 	local to_offhand = inventory_info.to_list == "offhand"
-	if from_offhand or to_offhand then
+	if action == "move" and from_offhand or to_offhand then
 		mcl_inventory.update_inventory_formspec(player)
 	end
 end)

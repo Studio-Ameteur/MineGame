@@ -4,8 +4,6 @@ local EF = {}
 mcl_potions.registered_effects = {}
 local registered_effects = mcl_potions.registered_effects -- shorthand ref
 
-local hud_type_field = mcl_vars.hud_type_field
-
 -- effects affecting item speed utilize numerous hacks, so they have to be counted separately
 local item_speed_effects = {}
 
@@ -194,7 +192,7 @@ end
 
 mcl_potions.register_effect({
 	name = "invisibility",
-	description = S("Invisibility"),
+	description = S("Invisiblity"),
 	get_tt = function(factor)
 		return S("body is invisible")
 	end,
@@ -248,7 +246,7 @@ mcl_potions.register_effect({
 		if object:is_player() then
 			object:set_hp(math.min(object:get_properties().hp_max or 20, object:get_hp() + 1), { type = "set_hp", other = "regeneration" })
 		elseif entity and entity.is_mob then
-			entity.health = math.min(entity.initial_properties.hp_max, entity.health + 1)
+			entity.health = math.min(entity.hp_max, entity.health + 1)
 		end
 	end,
 	particle_color = "#CD5CAB",
@@ -306,8 +304,9 @@ mcl_potions.register_effect({
 		return (not object:is_player()) -- TODO add support for breath setting for mobs
 	end,
 	on_step = function(dtime, object, factor, duration)
-		if object:get_breath() and object:get_breath() < 10 then
-			object:set_breath(10)
+		if object:get_breath() then
+			hb.hide_hudbar(object, "breath")
+			if object:get_breath() < 10 then object:set_breath(10) end
 		end
 	end,
 	particle_color = "#2E5299",
@@ -457,10 +456,6 @@ mcl_potions.register_effect({
 		object:get_meta():set_int("night_vision", 1)
 		mcl_weather.skycolor.update_sky_color({object})
 	end,
-	on_load = function(object, factor)
-		object:get_meta():set_int("night_vision", 1)
-		mcl_weather.skycolor.update_sky_color({object})
-	end,
 	on_step = function(dtime, object, factor, duration)
 		mcl_weather.skycolor.update_sky_color({object})
 	end,
@@ -493,7 +488,7 @@ mcl_potions.register_effect({
 	end,
 	on_step = function(dtime, object, factor, duration)
 		if object:get_meta():get_int("night_vision") ~= 1 then
-			local flash = EF.darkness[object].flash or 0
+			local flash = EF.darkness[object].flash
 			if flash < 0.2 then EF.darkness[object].flashdir = true
 			elseif flash > 0.6 then EF.darkness[object].flashdir = false end
 			flash = EF.darkness[object].flashdir and (flash + dtime) or (flash - dtime)
@@ -560,7 +555,7 @@ mcl_potions.register_effect({
 							player:hud_change(hud_id, "scale", {x = scale, y = scale})
 						else
 							EF.glowing[object].waypoints[player] = player:hud_add({
-								[hud_type_field] = "image_waypoint",
+								hud_elem_type = "image_waypoint",
 								position = {x = 0.5, y = 0.5},
 								scale = {x = scale, y = scale},
 								text = "mcl_potions_glow_waypoint.png",
@@ -601,15 +596,9 @@ mcl_potions.register_effect({
 	end,
 	on_start = function(object, factor)
 		object:set_properties({hp_max = minetest.PLAYER_MAX_HP_DEFAULT+factor})
-		vl_hudbars.update_health(object)
-	end,
-	on_load = function(object, factor)
-		object:set_properties({hp_max = minetest.PLAYER_MAX_HP_DEFAULT+factor})
-		vl_hudbars.update_health(object)
 	end,
 	on_end = function(object)
 		object:set_properties({hp_max = minetest.PLAYER_MAX_HP_DEFAULT})
-		vl_hudbars.update_health(object)
 	end,
 	particle_color = "#FF2222",
 	uses_factor = true,
@@ -627,19 +616,17 @@ mcl_potions.register_effect({
 		return (not object:is_player()) -- TODO dmg modifiers don't work for mobs
 	end,
 	on_start = function(object, factor)
-		vl_hudbars.change_value(object, "health", factor, factor, "absorption")
+		hb.change_hudbar(object, "absorption", factor, (math.floor(factor/20-0.05)+1)*20)
 		EF.absorption[object].absorb = factor
 	end,
 	on_load = function(object, factor)
-		minetest.after(0, function()
-			vl_hudbars.change_value(object, "health", factor, factor, "absorption")
-		end)
+		minetest.after(0, function() hb.change_hudbar(object, "absorption", nil, (math.floor(factor/20-0.05)+1)*20) end)
 	end,
 	on_step = function(dtime, object, factor, duration)
-		vl_hudbars.change_value(object, "health", EF.absorption[object].absorb, EF.absorption[object].absorb, "absorption")
+		hb.change_hudbar(object, "absorption", EF.absorption[object].absorb)
 	end,
 	on_end = function(object)
-		vl_hudbars.change_value(object, "health", 0, 0, "absorption")
+		hb.change_hudbar(object, "absorption", 0)
 	end,
 	particle_color = "#B59500",
 	uses_factor = true,
@@ -782,7 +769,7 @@ mcl_potions.register_effect({
 		playerphysics.add_physics_factor(object, "speed", "mcl_potions:frost", 1-factor)
 		if EF.frost[object].vignette then return end
 		EF.frost[object].vignette = object:hud_add({
-			[hud_type_field] = "image",
+			hud_elem_type = "image",
 			position = {x = 0.5, y = 0.5},
 			scale = {x = -101, y = -101},
 			text = "mcl_potions_frost_hud.png",
@@ -791,7 +778,7 @@ mcl_potions.register_effect({
 	end,
 	on_load = function(object, factor)
 		EF.frost[object].vignette = object:hud_add({
-			[hud_type_field] = "image",
+			hud_elem_type = "image",
 			position = {x = 0.5, y = 0.5},
 			scale = {x = -101, y = -101},
 			text = "mcl_potions_frost_hud.png",
@@ -823,7 +810,7 @@ mcl_potions.register_effect({
 
 mcl_potions.register_effect({
 	name = "blindness",
-	description = S("Blindness"),
+	description = "Blindness",
 	get_tt = function(factor)
 		return S("impaired sight")
 	end,
@@ -832,7 +819,7 @@ mcl_potions.register_effect({
 	end,
 	on_start = function(object, factor)
 		EF.blindness[object].vignette = object:hud_add({
-			[hud_type_field] = "image",
+			hud_elem_type = "image",
 			position = {x = 0.5, y = 0.5},
 			scale = {x = -101, y = -101},
 			text = "mcl_potions_blindness_hud.png",
@@ -842,7 +829,7 @@ mcl_potions.register_effect({
 	end,
 	on_load = function(object, factor)
 		EF.blindness[object].vignette = object:hud_add({
-			[hud_type_field] = "image",
+			hud_elem_type = "image",
 			position = {x = 0.5, y = 0.5},
 			scale = {x = -101, y = -101},
 			text = "mcl_potions_blindness_hud.png",
@@ -923,10 +910,16 @@ mcl_potions.register_effect({
 		return (not object:is_player()) -- TODO what should it do for mobs?
 	end,
 	on_start = function(object, factor)
-		vl_hudbars.set_icon(object, "hunger", "mcl_hunger_icon_foodpoison.png")
+		hb.change_hudbar(object, "hunger", nil, nil, "mcl_hunger_icon_foodpoison.png", nil, "mcl_hunger_bar_foodpoison.png")
+		if mcl_hunger.debug then
+			hb.change_hudbar(object, "exhaustion", nil, nil, nil, nil, "mcl_hunger_bar_foodpoison.png")
+		end
 	end,
 	on_load = function(object, factor) -- TODO refactor and add hunger bar modifier API
-		vl_hudbars.set_icon(object, "hunger", "mcl_hunger_icon_foodpoison.png")
+		hb.change_hudbar(object, "hunger", nil, nil, "mcl_hunger_icon_foodpoison.png", nil, "mcl_hunger_bar_foodpoison.png")
+		if mcl_hunger.debug then
+			hb.change_hudbar(object, "exhaustion", nil, nil, nil, nil, "mcl_hunger_bar_foodpoison.png")
+		end
 	end,
 	on_step = function(dtime, object, factor, duration)
 		mcl_hunger.exhaust(object:get_player_name(), dtime*factor)
@@ -992,7 +985,6 @@ function mcl_potions.hf_update_internal(hand, object)
 	local meta = hand:get_meta()
 	local h_fac = mcl_potions.get_total_haste(object)
 	local f_fac = mcl_potions.get_total_fatigue(object)
-	meta:set_tool_capabilities()
 	local toolcaps = hand:get_tool_capabilities()
 	meta:set_tool_capabilities(mcl_potions.apply_haste_fatigue(toolcaps, h_fac, f_fac))
 	return hand
@@ -1065,6 +1057,7 @@ mcl_potions.register_effect({
 			and minetest.get_item_group(node.name, "water") ~= 0 then
 				EF.conduit_power[object].blocked = nil
 				if object:get_breath() then
+					hb.hide_hudbar(object, "breath")
 					if object:get_breath() < 10 then object:set_breath(10) end
 				end
 				-- TODO implement improved underwater vision with this effect
@@ -1098,8 +1091,7 @@ function mcl_potions.update_haste_and_fatigue(player)
 		if f_fac ~= 1 then meta:set_float("mcl_potions:fatigue", 1 - f_fac)
 		else meta:set_string("mcl_potions:fatigue", "") end
 		meta:set_tool_capabilities()
-		meta:set_string("groupcaps_hash","")
-		mcl_enchanting.load_enchantments(item)
+		mcl_enchanting.update_groupcaps(item)
 		if h_fac == 0 and f_fac == 1 then
 			player:set_wielded_item(item)
 			return
@@ -1135,76 +1127,92 @@ end)
 -- ██║░░██║╚██████╔╝██████╦╝
 -- ╚═╝░░╚═╝░╚═════╝░╚═════╝░
 
--- Register HP bar icon changes based on potion effects
-vl_hudbars.register_hudbar_modifier{
-	identifier = "health",
-	part = "health_main",
+hb.register_hudbar("absorption", 0xFFFFFF, S("Absorption"), {bar = "[fill:2x16:#B59500", icon = "mcl_potions_icon_absorb.png"}, 0, 0, 0, false)
+
+local hp_hudbar_modifiers = {}
+
+-- API - registers a HP hudbar modifier
+-- required parameters in def:
+-- predicate - function(player) - returns true if player fulfills the requirements (eg. has the effects) for the hudbar look
+-- icon - string - name of the icon to which the modifier should change the HP hudbar heart
+-- priority - signed int - lower gets checked first, and first fulfilled predicate applies its modifier
+function mcl_potions.register_hp_hudbar_modifier(def)
+	if type(def.predicate) ~= "function" then error("Predicate must be a function") end
+	if not def.icon then error("No icon provided") end
+	if not def.priority then error("No priority provided") end
+	table.insert(hp_hudbar_modifiers, {
+		predicate = def.predicate,
+		icon = def.icon,
+		priority = def.priority,
+	})
+	table.sort(hp_hudbar_modifiers, function(a, b) return a.priority <= b.priority end)
+end
+
+mcl_potions.register_hp_hudbar_modifier({
 	predicate = function(player)
-		return mcl_potions.has_effect(player, "withering") and mcl_potions.has_effect(player, "regeneration")
+		if EF.withering[player] and EF.regeneration[player] then return true end
 	end,
 	icon = "mcl_potions_icon_regen_wither.png",
 	priority = -30,
-}
+})
 
-vl_hudbars.register_hudbar_modifier{
-	identifier = "health",
-	part = "health_main",
+mcl_potions.register_hp_hudbar_modifier({
 	predicate = function(player)
-		return mcl_potions.has_effect(player, "withering")
+		if EF.withering[player] then return true end
 	end,
 	icon = "mcl_potions_icon_wither.png",
 	priority = -20,
-}
+})
 
-vl_hudbars.register_hudbar_modifier{
-	identifier = "health",
-	part = "health_main",
+mcl_potions.register_hp_hudbar_modifier({
 	predicate = function(player)
-		return mcl_potions.has_effect(player, "poison") and mcl_potions.has_effect(player, "regeneration")
+		if EF.poison[player] and EF.regeneration[player] then return true end
 	end,
 	icon = "hbhunger_icon_regen_poison.png",
 	priority = -10,
-}
+})
 
-vl_hudbars.register_hudbar_modifier{
-	identifier = "health",
-	part = "health_main",
+mcl_potions.register_hp_hudbar_modifier({
 	predicate = function(player)
-		return mcl_potions.has_effect(player, "poison")
+		if EF.poison[player] then return true end
 	end,
 	icon = "hbhunger_icon_health_poison.png",
 	priority = 0,
-}
+})
 
-vl_hudbars.register_hudbar_modifier{
-	identifier = "health",
-	part = "health_main",
+mcl_potions.register_hp_hudbar_modifier({
 	predicate = function(player)
-		return mcl_potions.has_effect(player, "frost") and mcl_potions.has_effect(player, "regeneration")
+		if EF.frost[player] and EF.regeneration[player] then return true end
 	end,
 	icon = "mcl_potions_icon_regen_frost.png",
 	priority = 10,
-}
+})
 
-vl_hudbars.register_hudbar_modifier{
-	identifier = "health",
-	part = "health_main",
+mcl_potions.register_hp_hudbar_modifier({
 	predicate = function(player)
-		return mcl_potions.has_effect(player, "frost")
+		if EF.frost[player] then return true end
 	end,
 	icon = "mcl_potions_icon_frost.png",
 	priority = 20,
-}
+})
 
-vl_hudbars.register_hudbar_modifier{
-	identifier = "health",
-	part = "health_main",
+mcl_potions.register_hp_hudbar_modifier({
 	predicate = function(player)
-		return mcl_potions.has_effect(player, "regeneration")
+		if EF.regeneration[player] then return true end
 	end,
 	icon = "hudbars_icon_regenerate.png",
 	priority = 30,
-}
+})
+
+local function potions_set_hudbar(player)
+	for _, mod in pairs(hp_hudbar_modifiers) do
+		if mod.predicate(player) then
+			hb.change_hudbar(player, "health", nil, nil, mod.icon, nil, "hudbars_bar_health.png")
+			return
+		end
+	end
+	hb.change_hudbar(player, "health", nil, nil, "hudbars_icon_health.png", nil, "hudbars_bar_health.png")
+end
 
 local icon_ids = {}
 
@@ -1215,7 +1223,7 @@ local function potions_init_icons(player)
 		local x = -52 * e - 2
 		local id = {}
 		id.img = player:hud_add({
-			[hud_type_field] = "image",
+			hud_elem_type = "image",
 			text = "blank.png",
 			position = { x = 1, y = 0 },
 			offset = { x = x, y = 3 },
@@ -1224,7 +1232,7 @@ local function potions_init_icons(player)
 			z_index = 100,
 		})
 		id.label = player:hud_add({
-			[hud_type_field] = "text",
+			hud_elem_type = "text",
 			text = "",
 			position = { x = 1, y = 0 },
 			offset = { x = x+22, y = 50 },
@@ -1235,7 +1243,7 @@ local function potions_init_icons(player)
 			number = 0xFFFFFF,
 		})
 		id.timestamp = player:hud_add({
-			[hud_type_field] = "text",
+			hud_elem_type = "text",
 			text = "",
 			position = { x = 1, y = 0 },
 			offset = { x = x+22, y = 65 },
@@ -1247,6 +1255,7 @@ local function potions_init_icons(player)
 		})
 		table.insert(icon_ids[name], id)
 	end
+	hb.init_hudbar(player, "absorption")
 end
 
 local function potions_set_icons(player)
@@ -1298,7 +1307,7 @@ local function potions_set_icons(player)
 end
 
 local function potions_set_hud(player)
-	vl_hudbars.update_hudbar_modifiers(player, "health", "health_main")
+	potions_set_hudbar(player)
 	potions_set_icons(player)
 end
 
@@ -1337,12 +1346,12 @@ minetest.register_globalstep(function(dtime)
 				EF[name][object] = nil
 				if effect.after_end then effect.after_end(object) end
 				if object:is_player() then
-					local meta = object:get_meta()
+					meta = object:get_meta()
 					meta:set_string("mcl_potions:_EF_"..name, "")
 					potions_set_hud(object)
 				else
 					local ent = object:get_luaentity()
-					if ent and ent._mcl_potions then
+					if ent then
 						ent._mcl_potions["_EF_"..name] = nil
 					end
 				end
@@ -1357,7 +1366,7 @@ minetest.register_globalstep(function(dtime)
 				end
 			else
 				local ent = object:get_luaentity()
-				if ent and ent._mcl_potions then
+				if ent then
 					ent._mcl_potions["_EF_"..name] = EF[name][object]
 				end
 			end
@@ -1390,8 +1399,7 @@ function mcl_potions._reset_haste_fatigue_item_meta(player)
 			meta:set_string("mcl_potions:haste", "")
 			meta:set_string("mcl_potions:fatigue", "")
 			meta:set_tool_capabilities()
-			meta:set_string("groupcaps_hash","")
-			mcl_enchanting.load_enchantments(item)
+			mcl_enchanting.update_groupcaps(item)
 		end
 	end
 	inv:set_lists(lists)
@@ -1482,7 +1490,7 @@ function mcl_potions._load_player_effects(player)
 		meta:set_string("_is_weak", "")
 	end
 	if legacy_water_breathing then
-		EF.water_breathing[player] = legacy_water_breathing
+		EF.water_breathing[player] = legacy_water_breating
 		meta:set_string("_is_water_breating", "")
 	end
 	if legacy_leaping then
@@ -1515,11 +1523,6 @@ function mcl_potions._load_player_effects(player)
 		local loaded = minetest.deserialize(meta:get_string("mcl_potions:_EF_"..name))
 		if loaded then
 			EF[name][player] = loaded
-		end
-		if EF[name][player] then -- this is needed because of legacy effects loaded separately
-			if effect.uses_factor and type(EF[name][player].factor) ~= "number" then
-				EF[name][player].factor = effect.level_to_factor(1)
-			end
 			if effect.on_load then
 				effect.on_load(player, EF[name][player].factor)
 			end
@@ -1537,9 +1540,6 @@ function mcl_potions._load_entity_effects(entity)
 		local loaded = entity._mcl_potions["_EF_"..name]
 		if loaded then
 			EF[name][object] = loaded
-			if effect.uses_factor and not loaded.factor then
-				EF[name][object].factor = effect.level_to_factor(1)
-			end
 			if effect.on_load then
 				effect.on_load(object, EF[name][object].factor)
 			end
@@ -1671,31 +1671,23 @@ function mcl_potions.is_obj_hit(self, pos)
 	return false
 end
 
-local EMPTY_color = { r = 255, g = 255, b = 255, a = 0 }
-local WHITE_color = { r = 255, g = 255, b = 255, a = 255 }
+
 function mcl_potions.make_invisible(obj_ref, hide)
 	if obj_ref:is_player() then
 		if hide then
 			mcl_player.player_set_visibility(obj_ref, false)
-			obj_ref:set_properties({show_on_minimap = false})
-			obj_ref:set_nametag_attributes({ text = " ", color = EMPTY_color, bgcolor = EMPTY_color })
+			obj_ref:set_nametag_attributes({ color = { a = 0 } })
 		else
 			mcl_player.player_set_visibility(obj_ref, true)
-			obj_ref:set_properties({show_on_minimap = true})
-			obj_ref:set_nametag_attributes({ text = obj_ref:get_player_name(), color = WHITE_color, bgcolor = false })
-			-- TODO add a nametag color API and delegate this there
+			obj_ref:set_nametag_attributes({ color = { r = 255, g = 255, b = 255, a = 255 } })
 		end
 	else
-		local luaentity = obj_ref:get_luaentity()
-		if not luaentity then return end
 		if hide then
+			local luaentity = obj_ref:get_luaentity()
 			EF.invisibility[obj_ref].old_size = luaentity.visual_size
-			obj_ref:set_properties({ visual_size = { x = 0, y = 0 }, show_on_minimap = false })
-			obj_ref:set_nametag_attributes({ text = " ", color = EMPTY_color, bgcolor = EMPTY_color })
+			obj_ref:set_properties({ visual_size = { x = 0, y = 0 } })
 		else
-			obj_ref:set_properties({ visual_size = EF.invisibility[obj_ref].old_size, show_on_minimap = true })
-			obj_ref:set_nametag_attributes({ text = luaentity.nametag, color = WHITE_color, bgcolor = false })
-			-- TODO integrate this with mob naming better...
+			obj_ref:set_properties({ visual_size = EF.invisibility[obj_ref].old_size })
 		end
 	end
 end
@@ -1786,14 +1778,9 @@ end
 local function target_valid(object, name)
 	if not object or object:get_hp() <= 0 then return false end
 
-	-- Don't apply effects to anything other than players and entities that have mcl_potions support
-	-- but are not bosses
 	local entity = object:get_luaentity()
-	if not object:is_player() and (not entity or entity.is_boss or not entity._mcl_potions) then
-		return false
-	end
+	if entity and entity.is_boss then return false end
 
-	-- Check resistances
 	for i=1, #registered_res_predicates do
 		if registered_res_predicates[i](object, name) then return false end
 	end
@@ -1845,10 +1832,6 @@ end
 
 function mcl_potions.give_effect_by_level(name, object, level, duration, no_particles)
 	if level == 0 then return false end
-	if not registered_effects[name] then
-		minetest.log("warning", "[mcl_potions] Trying to give unknown effect "..tostring(name))
-		return false
-	end
 	if not registered_effects[name].uses_factor then
 		return mcl_potions.give_effect(name, object, 0, duration, no_particles)
 	end
@@ -1869,7 +1852,7 @@ function mcl_potions.healing_func(object, hp)
 		end
 
 		if ent and ent.is_mob then
-			ent.health = math.min(ent.health + hp, ent.initial_properties.hp_max)
+			ent.health = math.min(ent.health + hp, ent.hp_max)
 		elseif object:is_player() then
 			object:set_hp(math.min(object:get_hp() + hp, object:get_properties().hp_max), { type = "set_hp", other = "healing" })
 		end
@@ -1979,9 +1962,6 @@ function mcl_potions._extinguish_nearby_fire(pos, radius)
 			end
 			exting = true
 		end
-	end
-	for obj in core.objects_inside_radius(pos, radius or 1) do
-		mcl_burning.extinguish(obj)
 	end
 	return exting
 end

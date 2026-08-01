@@ -178,7 +178,7 @@ function mcl_experience.setup_hud(player)
 
 	if not minetest.is_creative_enabled(player:get_player_name()) then
 		hud_bars[player] = player:hud_add({
-			[mcl_vars.hud_type_field] = "image",
+			hud_elem_type = "image",
 			position = { x = 0.5, y = 1 },
 			offset = { x = (-9 * 28) - 3, y = -(48 + 24 + 16 - 5) },
 			scale = { x = 0.35, y = 0.375 },
@@ -187,7 +187,7 @@ function mcl_experience.setup_hud(player)
 		})
 
 		hud_levels[player] = player:hud_add({
-			[mcl_vars.hud_type_field] = "text",
+			hud_elem_type = "text",
 			position = { x = 0.5, y = 1 },
 			number = 0x80FF20,
 			offset = { x = 0, y = -(48 + 24 + 24) },
@@ -237,10 +237,8 @@ minetest.register_on_leaveplayer(function(player)
 	caches[player] = nil
 end)
 
-local keep_inventory = vl_tuning.setting("gamerule:keepInventory")
-assert(keep_inventory)
 minetest.register_on_dieplayer(function(player)
-	if not keep_inventory:getter() then
+	if not minetest.settings:get_bool("mcl_keepInventory", false) then
 		mcl_experience.throw_xp(player:get_pos(), mcl_experience.get_xp(player))
 		mcl_experience.set_xp(player, 0)
 	end

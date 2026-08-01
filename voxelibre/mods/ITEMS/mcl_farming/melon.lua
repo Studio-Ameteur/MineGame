@@ -1,7 +1,7 @@
-local S = core.get_translator(core.get_current_modname())
+local S = minetest.get_translator(minetest.get_current_modname())
 
 -- Seeds
-core.register_craftitem("mcl_farming:melon_seeds", {
+minetest.register_craftitem("mcl_farming:melon_seeds", {
 	description = S("Melon Seeds"),
 	_tt_help = S("Grows on farmland"),
 	_doc_items_longdesc = S("Grows into a melon stem which in turn grows melons. Chickens like melon seeds."),
@@ -52,7 +52,7 @@ local melon_base_def = {
 local stem_drop = {
 	max_items = 1,
 	-- The probabilities are slightly off from the original.
-	-- Update this drop list when the Luanti drop probability system
+	-- Update this drop list when the Minetest drop probability system
 	-- is more powerful.
 	items = {
 		-- 1 seed: Approximation to 20/125 chance
@@ -87,7 +87,7 @@ for s=1,7 do
 	end
 	local colorstring = mcl_farming:stem_color(startcolor, endcolor, s, 8)
 	local texture = "([combine:16x16:0,"..((8-s)*2).."=mcl_farming_melon_stem_disconnected.png)^[colorize:"..colorstring..":127"
-	core.register_node("mcl_farming:melontige_"..s, {
+	minetest.register_node("mcl_farming:melontige_"..s, {
 		description = S("Premature Melon Stem (Stage @1)", s),
 		_doc_items_create_entry = doc,
 		_doc_items_entry_name = entry_name,
@@ -109,12 +109,6 @@ for s=1,7 do
 		groups = {dig_immediate=3, not_in_creative_inventory=1, plant=1,attached_node=1, dig_by_water=1,destroy_by_lava_flow=1, plant_melon_stem=s},
 		sounds = mcl_sounds.node_sound_leaves_defaults(),
 		_mcl_blast_resistance = 0,
-		_on_bone_meal = function(itemstack, placer, pointed_thing)
-			local pos = pointed_thing.under
-			local n = core.get_node(pos)
-			local stages = math.random(2, 5)
-			return mcl_farming:grow_plant("plant_melon_stem", pos, n, stages, true)
-		end
 	})
 end
 
@@ -129,30 +123,30 @@ local stem_def = {
 }
 
 -- Register stem growth
-mcl_farming:add_plant("plant_melon_stem", "mcl_farming:melontige_unconnect", {"mcl_farming:melontige_1", "mcl_farming:melontige_2", "mcl_farming:melontige_3", "mcl_farming:melontige_4", "mcl_farming:melontige_5", "mcl_farming:melontige_6", "mcl_farming:melontige_7"}, 5.8014, 35)
+mcl_farming:add_plant("plant_melon_stem", "mcl_farming:melontige_unconnect", {"mcl_farming:melontige_1", "mcl_farming:melontige_2", "mcl_farming:melontige_3", "mcl_farming:melontige_4", "mcl_farming:melontige_5", "mcl_farming:melontige_6", "mcl_farming:melontige_7"}, 30, 5)
 
 -- Register actual melon, connected stems and stem-to-melon growth
-mcl_farming:add_gourd("mcl_farming:melontige_unconnect", "mcl_farming:melontige_linked", "mcl_farming:melontige_unconnect", stem_def, stem_drop, "mcl_farming:melon", melon_base_def, 5.8015, 35, "mcl_farming_melon_stem_connected.png^[colorize:#FFA800:127")
+mcl_farming:add_gourd("mcl_farming:melontige_unconnect", "mcl_farming:melontige_linked", "mcl_farming:melontige_unconnect", stem_def, stem_drop, "mcl_farming:melon", melon_base_def, 25, 15, "mcl_farming_melon_stem_connected.png^[colorize:#FFA800:127")
 
 -- Items and crafting
-core.register_craftitem("mcl_farming:melon_item", {
+minetest.register_craftitem("mcl_farming:melon_item", {
 	-- Original name: “Melon”
 	description = S("Melon Slice"),
 	_doc_items_longdesc = S("This is a food item which can be eaten."),
 	stack_max = 64,
 	inventory_image = "farming_melon.png",
-	on_place = core.item_eat(2),
-	on_secondary_use = core.item_eat(2),
+	on_place = minetest.item_eat(2),
+	on_secondary_use = minetest.item_eat(2),
 	groups = {food = 2, eatable = 2, compostability = 50},
 	_mcl_saturation = 1.2,
 })
 
-core.register_craft({
+minetest.register_craft({
 	output = "mcl_farming:melon_seeds",
 	recipe = {{"mcl_farming:melon_item"}}
 })
 
-core.register_craft({
+minetest.register_craft({
 	output = "mcl_farming:melon",
 	recipe = {
 		{"mcl_farming:melon_item", "mcl_farming:melon_item", "mcl_farming:melon_item"},
@@ -161,7 +155,7 @@ core.register_craft({
 	}
 })
 
-if core.get_modpath("doc") then
+if minetest.get_modpath("doc") then
 	for i=2,8 do
 		doc.add_entry_alias("nodes", "mcl_farming:melontige_1", "nodes", "mcl_farming:melontige_"..i)
 	end

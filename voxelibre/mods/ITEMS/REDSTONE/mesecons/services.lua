@@ -21,13 +21,7 @@ function mesecon.on_placenode(pos, node)
 			end
 			mesecon.receptor_on (pos, mesecon.conductor_get_rules(node))
 		elseif mesecon.is_conductor_on(node) then
-			local offstate = mesecon.get_conductor_off(node)
-			if type(offstate) == "function" then
-				local res = offstate(pos, node)
-				core.swap_node(pos, {name = res[1], param2 = res[2]})
-			else
-				core.swap_node(pos, {name = offstate})
-			end
+			minetest.swap_node(pos, {name = mesecon.get_conductor_off(node)})
 		end
 	end
 

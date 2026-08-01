@@ -1,12 +1,12 @@
 local S = minetest.get_translator(minetest.get_current_modname())
 
 -- Fish Buckets
-local bucket_names = {
-	["cod"] = S("Bucket of Cod"),
-	["salmon"] = S("Bucket of Salmon"),
-	["tropical_fish"] = S("Bucket of Tropical Fish"),
-	["axolotl"] = S("Bucket of Axolotl"),
-	--["pufferfish"] = S("Bucket of Pufferfish"), --FIXME add pufferfish
+local fish_names = {
+	["cod"] = "Cod",
+	["salmon"] = "Salmon",
+	["tropical_fish"] = "Tropical Fish",
+	["axolotl"] = "Axolotl",
+	--["pufferfish"] = "Pufferfish", --FIXME add pufferfish
 }
 
 local fishbucket_prefix = "mcl_buckets:bucket_"
@@ -29,21 +29,14 @@ local function on_place_fish(itemstack, placer, pointed_thing)
 		n = minetest.get_node(pointed_thing.under)
 	end
 
-	local placername = placer:get_player_name()
-	if core.is_protected(pos, placername) then
-		core.record_protection_violation(pos, placername)
-		return itemstack
-	end
-
 	local fish = itemstack:get_definition()._mcl_buckets_fish
-	if bucket_names[fish] then
+	if fish_names[fish] then
 		local o = minetest.add_entity(pos, "mobs_mc:" .. fish)
 		if o and o:get_pos() then
 			local props = itemstack:get_meta():get_string("properties")
 			if props ~= "" then
 				o:set_properties(minetest.deserialize(props))
 			end
-			o:get_luaentity().persistent = true
 			local water = "mcl_core:water_source"
 			if n.name == "mclx_core:river_water_source" then
 				water = n.name
@@ -65,12 +58,12 @@ local function on_place_fish(itemstack, placer, pointed_thing)
 	return itemstack
 end
 
-for techname, bucketname in pairs(bucket_names) do
+for techname, fishname in pairs(fish_names) do
 	minetest.register_craftitem(fishbucket_prefix .. techname, {
-		description = bucketname,
-		_doc_items_longdesc = S("This bucket is filled with water and contains an aquatic mob."),
-		_doc_items_usagehelp = S("Place it to empty the bucket and place a mob. Obtain by right clicking on a small aquatic mob with a bucket of water."),
-		_tt_help = S("Places a water source and a mob."),
+		description = S("Bucket of @1", S(fishname)),
+		_doc_items_longdesc = S("This bucket is filled with water and @1.", S(fishname)),
+		_doc_items_usagehelp = S("Place it to empty the bucket and place a @1. Obtain by right clicking on a @2 with a bucket of water.", S(fishname), S(fishname)),
+		_tt_help = S("Places a water source and a @1.", S(fishname)),
 		inventory_image = "mcl_buckets_" .. techname .. "_bucket.png",
 		stack_max = 1,
 		groups = {bucket = 1, fish_bucket = 1},

@@ -36,13 +36,13 @@ end
 --     nil, "void"
 function mcl_worlds.y_to_layer(y)
 	if y >= mcl_vars.mg_overworld_min then
-		return y - mcl_vars.mg_overworld_min, "overworld", 0
+		return y - mcl_vars.mg_overworld_min, "overworld"
 	elseif y >= mcl_vars.mg_nether_min and y <= mcl_vars.mg_nether_max+128 then
-		return y - mcl_vars.mg_nether_min, "nether", 1
+		return y - mcl_vars.mg_nether_min, "nether"
 	elseif y >= mcl_vars.mg_end_min and y <= mcl_vars.mg_end_max then
-		return y - mcl_vars.mg_end_min, "end", 2
+		return y - mcl_vars.mg_end_min, "end"
 	else
-		return nil, "void", 3
+		return nil, "void"
 	end
 end
 
@@ -50,8 +50,8 @@ local y_to_layer = mcl_worlds.y_to_layer
 
 -- Takes a pos and returns the dimension it belongs to (same as above)
 function mcl_worlds.pos_to_dimension(pos)
-	local _, dim, dim_id = y_to_layer(pos.y)
-	return dim, dim_id
+	local _, dim = y_to_layer(pos.y)
+	return dim
 end
 
 local pos_to_dimension = mcl_worlds.pos_to_dimension

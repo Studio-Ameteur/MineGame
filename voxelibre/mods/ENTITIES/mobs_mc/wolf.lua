@@ -1,3 +1,5 @@
+--License for code WTFPL and otherwise stated in readmes
+
 local S = minetest.get_translator("mobs_mc")
 
 local default_walk_chance = 50
@@ -10,16 +12,14 @@ local wolf = {
 	type = "animal",
 	spawn_class = "passive",
 	can_despawn = true,
-	initial_properties = {
-		hp_min = 8,
-		hp_max = 8,
-		collisionbox = {-0.3, -0.01, -0.3, 0.3, 0.84, 0.3},
-	},
+	hp_min = 8,
+	hp_max = 8,
 	xp_min = 1,
 	xp_max = 3,
 	passive = false,
 	group_attack = true,
 	spawn_in_group = 8,
+	collisionbox = {-0.3, -0.01, -0.3, 0.3, 0.84, 0.3},
 	visual = "mesh",
 	mesh = "mobs_mc_wolf.b3d",
 	textures = {
@@ -27,8 +27,8 @@ local wolf = {
 	},
 	makes_footstep_sound = true,
 	head_swivel = "head.control",
-	head_eye_height = 0.5,
-	head_bone_position = vector.new( 0, 3.5, 0 ), -- for minetest <= 5.8
+	bone_eye_height = 3.5,
+	head_eye_height = 1.1,
 	horizontal_head_height=0,
 	curiosity = 3,
 	head_yaw="z",
@@ -97,7 +97,7 @@ local wolf = {
 	jump = true,
 	attacks_monsters = true,
 	attack_animals = true,
-	specific_attack = { "player", "mobs_mc:sheep", "mobs_mc:rabbit" },
+	specific_attack = { "player", "mobs_mc:sheep" },
 }
 
 mcl_mobs.register_mob("mobs_mc:wolf", wolf)
@@ -138,9 +138,8 @@ local dog = table.copy(wolf)
 dog.description = S("Dog")
 dog.can_despawn = false
 dog.passive = true
-dog.initial_properties = table.copy(wolf.initial_properties)
-dog.initial_properties.hp_min = 20
-dog.initial_properties.hp_max = 20
+dog.hp_min = 20
+dog.hp_max = 20
 -- Tamed wolf texture + red collar
 dog.textures = get_dog_textures("unicolor_red")
 dog.owner = ""
@@ -208,28 +207,27 @@ end
 
 mcl_mobs.register_mob("mobs_mc:dog", dog)
 -- Spawn
-mcl_mobs:spawn_setup({
-	name = "mobs_mc:wolf",
-	dimension = "overworld",
-	type_of_spawning = "ground",
-	biomes = {
-		"Taiga",
-		"MegaSpruceTaiga",
-		"MegaTaiga",
-		"Forest",
-		"ColdTaiga",
-		"Forest_beach",
-		"ColdTaiga_beach_water",
-		"Taiga_beach",
-		"ColdTaiga_beach",
-	},
-	min_light = 0,
-	max_light = minetest.LIGHT_MAX+1,
-	chance = 80,
-	interval = 30,
-	aoc = 7,
-	min_height = mobs_mc.water_level+3,
-	max_height = mcl_vars.mg_overworld_max
-})
+mcl_mobs:spawn_specific(
+"mobs_mc:wolf",
+"overworld",
+"ground",
+{
+	"Taiga",
+	"MegaSpruceTaiga",
+	"MegaTaiga",
+	"Forest",
+	"ColdTaiga",
+	"Forest_beach",
+	"ColdTaiga_beach_water",
+	"Taiga_beach",
+	"ColdTaiga_beach",
+},
+0,
+minetest.LIGHT_MAX+1,
+30,
+80,
+7,
+mobs_mc.water_level+3,
+mcl_vars.mg_overworld_max)
 
 mcl_mobs.register_egg("mobs_mc:wolf", S("Wolf"), "#d7d3d3", "#ceaf96", 0)

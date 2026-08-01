@@ -42,7 +42,7 @@ minetest.register_node("mcl_nether:quartz_ore", {
 	stack_max = 64,
 	tiles = {"mcl_nether_quartz_ore.png"},
 	is_ground_content = true,
-	groups = {pickaxey=1, building_block=1, material_stone=1, xp=5},
+	groups = {pickaxey=1, building_block=1, material_stone=1, xp=3},
 	drop = "mcl_nether:quartz",
 	sounds = mcl_sounds.node_sound_stone_defaults(),
 	_mcl_blast_resistance = 3,
@@ -259,8 +259,8 @@ minetest.register_node("mcl_nether:quartz_smooth", {
 	tiles = {"mcl_nether_quartz_block_bottom.png"},
 	groups = {pickaxey=1, quartz_block=1,building_block=1, material_stone=1},
 	sounds = mcl_sounds.node_sound_stone_defaults(),
-	_mcl_blast_resistance = 6,
-	_mcl_hardness = 2,
+	_mcl_blast_resistance = 0.8,
+	_mcl_hardness = 0.8,
 })
 
 minetest.register_craftitem("mcl_nether:glowstone_dust", {

@@ -1,5 +1,5 @@
 
-Lightning mod for Luanti
+Lightning mod for minetest
 
 
 Copyright (C) 2016 - Auke Kok <sofar@foo-projects.org>
