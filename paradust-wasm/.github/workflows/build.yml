@@ -1,0 +1,14 @@
+name: build
+
+on: push
+
+jobs:
+  docker:
+    name: "Build Docker Image"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build docker image
+        run: |
+          docker build . -t mtweb
+          docker run --rm mtweb ls -la /minetest-wasm/www
